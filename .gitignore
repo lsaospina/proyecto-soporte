@@ -1,0 +1,63 @@
+# ── Python / Django ──────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.log
+db.sqlite3
+backend/media/
+backend/staticfiles/
+
+# ── Variables de entorno (solo se versiona el .example) ──
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ── Node / Frontend ──────────────────────────────
+node_modules/
+frontend/dist/
+frontend/build/
+frontend/coverage/
+frontend/.vite/
+frontend/playwright-report/
+frontend/test-results/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ── Docker / datos locales ───────────────────────
+docker-compose.override.yml
+pgdata/
+postgres_data/
+
+# ── Respaldos y volcados de BD ───────────────────
+backups/
+*.sql
+*.dump
+*.bak
+
+# ── IDE / SO ─────────────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ── Archivos locales de agentes IA (lo compartido SÍ se versiona) ──
+.claude/settings.local.json
+CLAUDE.local.md
+.aider*
+.cursor/
+tmp/
+scratch/
