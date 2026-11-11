@@ -42,14 +42,57 @@
 - `backend/apps/autenticacion/tests/integration/test_auth_flow_integration.py` — 8 tests: flujo completo login→MFA, bloqueo, reúso, recuperación, refresh, logout, /me
 
 ## Frontend
-_(vacío — se llena en T-001 FASE B)_
+### Configuración y Estilos
+- `frontend/package.json` — dependencias (React 19, React Router 7, TanStack Query, Axios, RHF, Zod, Vitest)
+- `frontend/vite.config.ts` — configuración de Vite (React plugin, proxy `/api` a backend, configuración Vitest)
+- `frontend/.env.example` — plantilla de variables de entorno para Vite (`VITE_API_BASE_URL`)
+- `frontend/src/styles/tokens.css` — tokens CSS de diseño (colores primario/navy, neutrales, semánticos, bordes, radios)
+- `frontend/src/styles/globals.css` — estilos globales, tipografía y resets
+
+### API Layer
+- `frontend/src/api/client.ts` — cliente Axios centralizado con inyección Bearer JWT y refresco automático 401 por cola
+- `frontend/src/api/query-client.ts` — cliente TanStack Query con defaults de reconexión y reintento
+
+### Componentes Compartidos (`frontend/src/components/shared/`)
+- `AppShell.tsx` — layout institucional con sidebar colapsable, navegación filtrada por rol, topbar y logout
+- `PageHeader.tsx` — encabezado uniforme con breadcrumbs y contenedor de acciones
+- `FormField.tsx` — contenedor accesible de etiqueta, campo, asterisco de requerido, helpText y error alert
+- `FormSection.tsx` — sección contenedora para formularios extensos con título y descripción
+- `StatusBadge.tsx` — badge semántico (`success`, `warning`, `danger`, `info`, `neutral`) con punto indicador
+- `EmptyState.tsx` — estado vacío reutilizable con icono, título, descripción y acción opcional
+- `LoadingSkeleton.tsx` — skeleton loader uniforme con efecto pulse configurable
+- `ErrorState.tsx` — pantalla de error con advertencia visual y botón de reintento
+
+### Módulo Autenticación (`frontend/src/features/auth/`)
+- `api/auth.api.ts` — llamadas a API `/api/v1/auth/` (`login`, `mfaSetup`, `mfaConfirm`, `mfaVerify`, `logout`, `getMe`)
+- `types/index.ts` — contratos TypeScript de autenticación, roles, pasos y respuestas de API
+- `schemas/login.schema.ts` — esquema Zod de credenciales (email y password)
+- `schemas/mfa.schema.ts` — esquema Zod de código de 6 dígitos y código de recuperación
+- `hooks/useAuth.tsx` — contexto y hook `useAuth` para estado de sesión, tokens y ciclo de vida de usuario
+- `pages/LoginPage.tsx` — pantalla principal de login orquestando pasos de credenciales y segundo factor
+- `components/MFAVerifyStep.tsx` — paso de validación TOTP de 6 dígitos con switch a código de recuperación
+- `components/MFASetupStep.tsx` — paso de activación inicial MFA con renderizado de QR y clave manual
+- `components/RecoveryCodesDisplay.tsx` — visualización segura de códigos de respaldo con copia al portapapeles
+
+### Rutas y Vistas
+- `frontend/src/routes/Router.tsx` — definición central de rutas con BrowserRouter
+- `frontend/src/routes/ProtectedRoute.tsx` — HOC de guardia para validar sesión activa y roles permitidos
+- `frontend/src/features/dashboard/pages/DashboardPage.tsx` — vista inicial de bienvenida tras autenticación
+- `frontend/src/pages/ComingSoonPage.tsx` — placeholder para módulos en backlog
+- `frontend/src/pages/NotFoundPage.tsx` — pantalla 404
+
+### Pruebas Frontend
+- `frontend/src/test/setup.ts` — setup de vitest con jest-dom y limpieza de componentes
+- `frontend/src/components/shared/__tests__/` — pruebas unitarias de FormField y StatusBadge
+- `frontend/src/features/auth/schemas/__tests__/` — pruebas unitarias de esquemas login y MFA
+- `frontend/src/features/auth/components/__tests__/` — prueba unitaria de RecoveryCodesDisplay
 
 ## Infraestructura
 - `.gitattributes` — LF line endings para todo el repo
 - `backend/.env.example` — plantilla de variables de entorno (nunca toca `.env`)
-- `backend/apps/autenticacion/migrations/0001_initial.py` — crea `CodigoRecuperacion` y `DispositivoMFA`
-- `backend/apps/autenticacion/migrations/0002_initial.py` — agrega FKs
-- `backend/apps/usuarios/migrations/0001_initial.py` — crea `Usuario`
+- `frontend/.env.example` — plantilla de variables de entorno para Vite
+- `backend/apps/autenticacion/migrations/` — migraciones autenticación
+- `backend/apps/usuarios/migrations/` — migraciones usuarios
 
 ## Convenciones de nombres → ubicación
 - Modelos: `backend/apps/<app>/models.py` · Casos de uso (escritura): `services.py` · Consultas (lectura): `selectors.py`

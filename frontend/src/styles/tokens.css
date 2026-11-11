@@ -1,0 +1,56 @@
+/* ──────────────────────────────────────────────────
+   Design Tokens — Sistema de Gestión de Inventarios
+   No usar colores hex sueltos; siempre usar var(--token).
+   ────────────────────────────────────────────────── */
+
+:root {
+  /* Layout */
+  --sidebar: #213145;
+  --sidebar-hover: #2a3f57;
+  --sidebar-active: #1a2738;
+
+  /* Brand */
+  --primary: #024DB9;
+  --primary-hover: #0241a0;
+  --primary-light: #DBEAFE;
+
+  /* Surfaces */
+  --background: #F8F9FF;
+  --surface: #FFFFFF;
+  --border: #E2E8F0;
+
+  /* Text */
+  --text: #0F172A;
+  --text-muted: #475569;
+  --text-inverse: #FFFFFF;
+
+  /* Semantic — Success */
+  --success-fg: #15803D;
+  --success-bg: #DCFCE7;
+
+  /* Semantic — Warning */
+  --warning-fg: #B45309;
+  --warning-bg: #FEF3C7;
+
+  /* Semantic — Danger */
+  --danger-fg: #B91C1C;
+  --danger-bg: #FEE2E2;
+
+  /* Semantic — Info */
+  --info-fg: #1D4ED8;
+  --info-bg: #DBEAFE;
+
+  /* Semantic — Neutral */
+  --neutral-fg: #334155;
+  --neutral-bg: #F1F5F9;
+
+  /* Radii */
+  --radius-control: 6px;
+  --radius-card: 8px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+}

@@ -1,10 +1,11 @@
 # STATE — estado vivo del proyecto
 
 > El agente actualiza este archivo al cerrar cada tarea. Mantenerlo corto (no es un historial completo).
-> Última actualización: 2026-11-09 · por: agente (cierre FASE A de T-001)
+> Última actualización: 2026-11-10 · por: agente (cierre T-001 FASE B)
 
 ## Tarea actual
-**T-001 — Esqueleto + login con MFA TOTP** → `docs/agent/tasks/T-001-setup.md`. Estado: **FASE A COMPLETA / FASE B PENDIENTE**.
+**T-001 — Esqueleto + login con MFA TOTP** → `docs/agent/tasks/T-001-setup.md`. Estado: **COMPLETA**.
+Siguiente tarea: **T-002 — Usuarios y acceso completo**.
 
 ## Hecho
 - Documento de análisis y diseño (docx), mockups, diccionario de datos (baseline).
@@ -19,6 +20,17 @@
   - 11 tests unitarios + 8 tests de integración = **19/19 passed**.
   - ruff check + format: 0 errores.
   - Migraciones aplicadas en `inventario_dev`.
+- **T-001 FASE B** — Frontend completo:
+  - Vite + React 19 + TypeScript + Tailwind CSS 4.
+  - Sistema de diseño sobrio: tokens CSS institucionales (`tokens.css`, `globals.css`).
+  - Capa API centralizada en Axios con interceptores JWT Bearer y refresco automático transparente vía HttpOnly cookies (`src/api/client.ts`). TanStack Query configurado (`src/api/query-client.ts`).
+  - Auth module: Context provider `useAuth`, APIs de auth, schemas de validación Zod (`login.schema.ts`, `mfa.schema.ts`).
+  - Pantallas de autenticación: `LoginPage` con flujo paso a paso (credenciales, `MFAVerifyStep`, `MFASetupStep` con QR `qrcode.react` y `RecoveryCodesDisplay`).
+  - Layout institucional `AppShell`: sidebar colapsable color navy, navegación filtrada por rol de usuario (`ADMINISTRADOR`, `TECNICO`, `USUARIO_RESPONSABLE`), topbar con badge de rol y avatar, y logout.
+  - Componentes compartidos (`PageHeader`, `FormField`, `FormSection`, `StatusBadge`, `EmptyState`, `LoadingSkeleton`, `ErrorState`).
+  - Enrutamiento con `react-router-dom`: `ProtectedRoute` con redirección según autenticación y validación de roles, `DashboardPage`, `ComingSoonPage`, `NotFoundPage`.
+  - 18 tests unitarios Vitest pasados al 100% (componentes compartidos, schemas y flujos auth).
+  - Typecheck (`tsc -b`) y linter (`oxlint`) con 0 errores y 0 warnings.
 
 ## Backlog (cada tarea = módulo completo: backend + frontend + pruebas)
 | ID | Alcance | Depende de |
@@ -45,6 +57,8 @@
 ## Ideas y deuda (fuera de alcance actual)
 - T-002 debe incluir endpoint de reset MFA por administrador (identificado en T-001).
 - Considerar `django-simple-history` para auditoría de cambios en modelos de negocio (ADR-005).
+- Soporte para Docker diferido por decisión del usuario (ejecución actual en local Vite dev server + Django runserver).
 
 ## Registro de sesiones (solo las últimas 5, una línea c/u)
 - 2026-11-09: T-001 FASE A completada. Backend esqueleto + autenticación TOTP. 19/19 tests. Sin Docker (local).
+- 2026-11-10: T-001 FASE B completada. Frontend React 19 + Auth TOTP + Layout AppShell. 18/18 tests. Typecheck & lint 0 errores.
