@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Shield, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Shield, Eye, EyeOff, Loader2, Lock, Mail, ArrowRight } from 'lucide-react';
 import { loginSchema, type LoginFormData } from '../schemas/login.schema';
 import { login } from '../api/auth.api';
 import { useAuth } from '../hooks/useAuth';
@@ -82,169 +82,224 @@ export function LoginPage() {
   // Credentials step
   return (
     <LoginWrapper>
-      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-        <div
-          style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '12px',
-            backgroundColor: 'var(--primary)',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: '16px',
-          }}
-        >
-          <Shield size={28} color="#FFFFFF" />
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '32px' }}>
+        <div style={{
+          width: '56px',
+          height: '56px',
+          borderRadius: '12px',
+          backgroundColor: 'var(--surface-low)',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: '16px',
+          boxShadow: 'var(--shadow-sm)',
+        }}>
+          <Shield size={24} color="var(--primary)" />
         </div>
-        <h1 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--text)', margin: '0 0 4px' }}>
-          ITAM
+        <h1 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text)', margin: '0 0 4px', letterSpacing: '-0.01em' }}>
+          Compañia
         </h1>
-        <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>
+        <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0, fontWeight: 500 }}>
           Sistema de Gestión de Inventarios y Activos Tecnológicos
         </p>
-      </div>
-
-      <div
-        style={{
+        <div style={{
+          marginTop: '12px',
+          padding: '6px 12px',
           backgroundColor: 'var(--neutral-bg)',
-          borderRadius: 'var(--radius-control)',
-          padding: '10px 16px',
-          marginBottom: '24px',
-          textAlign: 'center',
-          fontSize: '12px',
+          borderRadius: '6px',
+          fontSize: '11px',
           fontWeight: 500,
           color: 'var(--neutral-fg)',
-          letterSpacing: '0.03em',
+          letterSpacing: '0.05em',
           textTransform: 'uppercase',
-        }}
-      >
-        Portal de autenticación
+        }}>
+          Portal de Autenticación de Administradores y Especialistas de TI
+        </div>
       </div>
 
-      {serverError && (
-        <div
-          style={{
+      <div style={{
+        marginTop: '24px',
+        display: 'flex',
+        alignItems: 'center',
+        width: '100%',
+      }}>
+        <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border)', marginRight: '12px' }} />
+        <span style={{
+          fontSize: '10px',
+          fontWeight: 500,
+          color: 'var(--text-muted)',
+          padding: '0 8px',
+          backgroundColor: 'var(--surface-lowest)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          whiteSpace: 'nowrap',
+        }}>
+          O credenciales locales
+        </span>
+        <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border)', marginLeft: '12px' }} />
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmitCredentials)} style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+        {serverError && (
+          <div style={{
             backgroundColor: 'var(--danger-bg)',
             color: 'var(--danger-fg)',
-            padding: '12px 16px',
-            borderRadius: 'var(--radius-control)',
+            padding: '10px 14px',
+            borderRadius: '6px',
             fontSize: '13px',
-            marginBottom: '16px',
-          }}
-        >
-          {serverError}
-        </div>
-      )}
+            lineHeight: 1.4,
+          }}>
+            {serverError}
+          </div>
+        )}
 
-      <form onSubmit={handleSubmit(onSubmitCredentials)}>
-        <FormField
-          label="Correo electrónico"
-          htmlFor="email"
-          required
-          error={errors.email?.message}
-        >
-          <input
-            id="email"
-            type="email"
-            autoComplete="email"
-            autoFocus
-            placeholder="usuario@empresa.com"
-            {...register('email')}
-            style={{
-              width: '100%',
-              padding: '10px 14px',
-              border: `1px solid ${errors.email ? 'var(--danger-fg)' : 'var(--border)'}`,
-              borderRadius: 'var(--radius-control)',
-              fontSize: '14px',
-              backgroundColor: 'var(--surface)',
-              color: 'var(--text)',
-              outline: 'none',
-              transition: 'border-color var(--transition-fast)',
-            }}
-          />
-        </FormField>
-
-        <FormField
-          label="Contraseña"
-          htmlFor="password"
-          required
-          error={errors.password?.message}
-        >
-          <div style={{ position: 'relative' }}>
+        <FormField label="Correo Electrónico Corporativo" htmlFor="corporateEmail" required>
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <Mail size={18} style={{ position: 'absolute', left: '10px', color: 'var(--text-muted)' }} />
             <input
-              id="password"
-              type={showPassword ? 'text' : 'password'}
-              autoComplete="current-password"
-              placeholder="••••••••"
-              {...register('password')}
+              id="corporateEmail"
+              name="email"
+              type="email"
+              autoComplete="email"
+              autoFocus
+              placeholder="usuario@empresa.com"
+              {...register('email')}
               style={{
                 width: '100%',
-                padding: '10px 42px 10px 14px',
-                border: `1px solid ${errors.password ? 'var(--danger-fg)' : 'var(--border)'}`,
-                borderRadius: 'var(--radius-control)',
+                padding: '8px 10px 8px 36px',
+                border: `1px solid ${errors.email ? 'var(--danger-fg)' : 'var(--border)'}`,
+                borderRadius: '6px',
                 fontSize: '14px',
-                backgroundColor: 'var(--surface)',
+                backgroundColor: 'var(--surface-low)',
                 color: 'var(--text)',
                 outline: 'none',
-                transition: 'border-color var(--transition-fast)',
+                boxShadow: 'inset 0 1px 2px rgb(0 0 0 / 0.05)',
+                transition: 'border-color var(--transition-fast), box-shadow var(--transition-fast)',
               }}
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-              style={{
-                position: 'absolute',
-                right: '10px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                color: 'var(--text-muted)',
-                padding: '4px',
-                display: 'flex',
-              }}
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
           </div>
         </FormField>
+
+        <FormField label="Contraseña" htmlFor="corporatePassword" required>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flex: 1 }}>
+              <Lock size={18} style={{ position: 'absolute', left: '10px', color: 'var(--text-muted)' }} />
+              <input
+                id="corporatePassword"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                placeholder="••••••••••••"
+                {...register('password')}
+                style={{
+                  width: '100%',
+                  padding: '8px 36px 8px 36px',
+                  border: `1px solid ${errors.password ? 'var(--danger-fg)' : 'var(--border)'}`,
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  backgroundColor: 'var(--surface-low)',
+                  color: 'var(--text)',
+                  outline: 'none',
+                  boxShadow: 'inset 0 1px 2px rgb(0 0 0 / 0.05)',
+                  transition: 'border-color var(--transition-fast), box-shadow var(--transition-fast)',
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                style={{
+                  position: 'absolute',
+                  right: '8px',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            <a
+              href="#recuperar"
+              style={{
+                fontSize: '13px',
+                color: 'var(--primary)',
+                fontWeight: 500,
+                whiteSpace: 'nowrap',
+                marginLeft: '12px',
+              }}
+            >
+              ¿Olvidaste tu contraseña?
+            </a>
+          </div>
+        </FormField>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '4px' }}>
+          <label style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            cursor: 'pointer',
+            fontSize: '13px',
+            color: 'var(--text-muted)',
+            fontWeight: 500,
+            userSelect: 'none',
+          }}>
+            <input
+              id="rememberDevice"
+              type="checkbox"
+              style={{ width: '16px', height: '16px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+            />
+            Recordar este terminal (12 hrs)
+          </label>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontSize: '11px',
+            fontWeight: 500,
+            color: 'var(--primary)',
+            backgroundColor: 'var(--primary-light)',
+            padding: '2px 8px',
+            borderRadius: '20px',
+          }}>
+            <Shield size={12} />
+            <span>MFA Requerido</span>
+          </div>
+        </div>
 
         <button
           type="submit"
           disabled={isSubmitting}
           style={{
             width: '100%',
-            padding: '12px',
+            marginTop: '8px',
+            padding: '10px',
             backgroundColor: 'var(--primary)',
             color: '#FFFFFF',
             border: 'none',
-            borderRadius: 'var(--radius-control)',
-            fontSize: '15px',
+            borderRadius: '6px',
+            fontSize: '14px',
             fontWeight: 600,
-            marginTop: '8px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '8px',
+            gap: '6px',
+            cursor: isSubmitting ? 'not-allowed' : 'pointer',
+            opacity: isSubmitting ? 0.7 : 1,
+            transition: 'background-color var(--transition-fast), opacity var(--transition-fast)',
           }}
         >
-          {isSubmitting && <Loader2 size={18} className="spin" />}
-          {isSubmitting ? 'Verificando…' : 'Iniciar sesión'}
+          {isSubmitting && <Loader2 size={16} />}
+          {isSubmitting ? 'Autenticando…' : 'Iniciar Sesión'}
+          {!isSubmitting && <ArrowRight size={16} />}
         </button>
       </form>
-
-      <p
-        style={{
-          textAlign: 'center',
-          fontSize: '12px',
-          color: 'var(--text-muted)',
-          marginTop: '24px',
-        }}
-      >
-        Autenticación de segundo factor (MFA) requerida
-      </p>
     </LoginWrapper>
   );
 }
@@ -265,10 +320,10 @@ function LoginWrapper({ children }: { children: React.ReactNode }) {
       <div
         style={{
           width: '100%',
-          maxWidth: '420px',
-          backgroundColor: 'var(--surface)',
+          maxWidth: '480px',
+          backgroundColor: 'var(--surface-lowest)',
           border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-card)',
+          borderRadius: '8px',
           padding: '40px 32px',
           boxShadow: 'var(--shadow-sm)',
         }}

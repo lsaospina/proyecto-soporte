@@ -10,18 +10,22 @@
   --sidebar-active: #1a2738;
 
   /* Brand */
-  --primary: #024DB9;
-  --primary-hover: #0241a0;
+  --primary: #005FAA;
+  --primary-hover: #004883;
   --primary-light: #DBEAFE;
 
   /* Surfaces */
   --background: #F8F9FF;
-  --surface: #FFFFFF;
-  --border: #E2E8F0;
+  --surface-lowest: #FFFFFF;
+  --surface-low: #EFF4FF;
+  --surface-container: #E5EEFF;
+  --surface-high: #DCE9FF;
+  --surface-highest: #D3E4FE;
+  --border: #C0C7D4;
 
   /* Text */
-  --text: #0F172A;
-  --text-muted: #475569;
+  --text: #0B1C30;
+  --text-muted: #404752;
   --text-inverse: #FFFFFF;
 
   /* Semantic — Success */

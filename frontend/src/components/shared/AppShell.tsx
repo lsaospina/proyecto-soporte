@@ -59,8 +59,9 @@ export function AppShell() {
       <aside
         style={{
           width: sidebarCollapsed ? '64px' : '256px',
-          backgroundColor: 'var(--sidebar)',
-          color: 'var(--text-inverse)',
+          backgroundColor: 'var(--surface-lowest)',
+          color: 'var(--text)',
+          borderRight: '1px solid var(--border)',
           display: 'flex',
           flexDirection: 'column',
           transition: 'width var(--transition-fast)',
@@ -77,7 +78,7 @@ export function AppShell() {
         <div
           style={{
             padding: sidebarCollapsed ? '16px 12px' : '16px 20px',
-            borderBottom: '1px solid rgba(255,255,255,0.1)',
+            borderBottom: '1px solid var(--border)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: sidebarCollapsed ? 'center' : 'space-between',
@@ -86,10 +87,10 @@ export function AppShell() {
         >
           {!sidebarCollapsed && (
             <div>
-              <div style={{ fontSize: '16px', fontWeight: 700, letterSpacing: '-0.02em' }}>
+              <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.02em' }}>
                 ITAM
               </div>
-              <div style={{ fontSize: '11px', opacity: 0.6, marginTop: '2px' }}>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
                 Gestión de activos
               </div>
             </div>
@@ -100,7 +101,7 @@ export function AppShell() {
             style={{
               background: 'none',
               border: 'none',
-              color: 'rgba(255,255,255,0.6)',
+              color: 'var(--text-muted)',
               padding: '4px',
               display: 'flex',
               alignItems: 'center',
@@ -128,11 +129,11 @@ export function AppShell() {
                 gap: '12px',
                 padding: sidebarCollapsed ? '10px 12px' : '10px 12px',
                 borderRadius: 'var(--radius-control)',
-                color: isActive ? '#FFFFFF' : 'rgba(255,255,255,0.7)',
-                backgroundColor: isActive ? 'var(--sidebar-active)' : 'transparent',
+                color: isActive ? 'var(--primary)' : 'var(--text-muted)',
+                backgroundColor: isActive ? 'var(--primary-light)' : 'transparent',
                 textDecoration: 'none',
                 fontSize: '14px',
-                fontWeight: isActive ? 500 : 400,
+                fontWeight: isActive ? 600 : 400,
                 marginBottom: '2px',
                 transition: 'all var(--transition-fast)',
                 justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
@@ -150,15 +151,15 @@ export function AppShell() {
         <div
           style={{
             padding: sidebarCollapsed ? '12px' : '12px 16px',
-            borderTop: '1px solid rgba(255,255,255,0.1)',
+            borderTop: '1px solid var(--border)',
           }}
         >
           {!sidebarCollapsed && user && (
             <div style={{ marginBottom: '8px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 500, color: '#FFFFFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user.nombre_completo}
               </div>
-              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                 {roleLabels[user.rol]}
               </div>
             </div>
@@ -173,7 +174,7 @@ export function AppShell() {
               padding: '8px 12px',
               background: 'none',
               border: 'none',
-              color: 'rgba(255,255,255,0.6)',
+              color: 'var(--text-muted)',
               borderRadius: 'var(--radius-control)',
               fontSize: '13px',
               justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
