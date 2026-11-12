@@ -5,6 +5,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.auditoria.models import AccionAuditoria
+from apps.auditoria.services import registrar_evento
+from apps.auditoria.utils import get_client_ip
+from apps.common.exceptions import CredencialesInvalidasError, CuentaBloqueadaError
+
 from .serializers import (
     LoginRequestSerializer,
     LoginResponseSerializer,
@@ -13,11 +18,13 @@ from .serializers import (
     MFASetupRequestSerializer,
     MFASetupResponseSerializer,
     MFAVerifyRequestSerializer,
+    PasswordChangeRequestSerializer,
     TokenRefreshResponseSerializer,
     UsuarioMeSerializer,
 )
 from .services import (
     autenticar_usuario_paso1,
+    cambiar_password_obligatorio,
     confirmar_setup_mfa,
     iniciar_setup_mfa,
     invalidar_sesion,
@@ -37,7 +44,7 @@ def set_refresh_cookie(response: Response, refresh_token_str: str) -> None:
     response.set_cookie(
         key=REFRESH_COOKIE_NAME,
         value=refresh_token_str,
-        max_age=7 * 24 * 60 * 60,  # 7 días
+        max_age=7 * 24 * 60 * 60,
         httponly=True,
         secure=is_secure,
         samesite=same_site,
@@ -47,25 +54,17 @@ def set_refresh_cookie(response: Response, refresh_token_str: str) -> None:
 
 def delete_refresh_cookie(response: Response) -> None:
     """Elimina la cookie del token de refresco."""
-    response.delete_cookie(
-        key=REFRESH_COOKIE_NAME,
-        path=REFRESH_COOKIE_PATH,
-    )
+    response.delete_cookie(key=REFRESH_COOKIE_NAME, path=REFRESH_COOKIE_PATH)
 
 
 class LoginView(APIView):
-    """
-    Paso 1 del inicio de sesión.
-    Verifica correo y contraseña. Si el usuario tiene MFA activo o es obligatorio,
-    emite un mfa_token temporal de 5 minutos y no inicia sesión directa.
-    """
+    """Paso 1 del inicio de sesión: credenciales y determinación de flujo siguiente."""
 
     permission_classes = [AllowAny]
     throttle_classes = [LoginRateThrottle]
 
     @extend_schema(
         summary="Inicio de sesión (Paso 1)",
-        description="Autentica las credenciales principales del usuario y determina si se requiere segundo factor.",
         request=LoginRequestSerializer,
         responses={200: LoginResponseSerializer},
         tags=["Autenticación"],
@@ -73,40 +72,115 @@ class LoginView(APIView):
     def post(self, request):
         serializer = LoginRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        ip = get_client_ip(request)
 
-        estado, mfa_token, refresh, user = autenticar_usuario_paso1(
-            email=serializer.validated_data["email"],
-            password=serializer.validated_data["password"],
-        )
+        try:
+            resultado = autenticar_usuario_paso1(
+                email=serializer.validated_data["email"],
+                password=serializer.validated_data["password"],
+                ip=ip,
+            )
+        except (CredencialesInvalidasError, CuentaBloqueadaError):
+            email_norm = serializer.validated_data.get("email", "").strip().lower()
+            registrar_evento(
+                usuario=None,
+                accion=AccionAuditoria.LOGIN_FALLIDO,
+                entidad="Usuario",
+                entidad_id=email_norm if "@" in email_norm and len(email_norm) <= 64 else "",
+                ip=ip,
+            )
+            raise
 
-        if estado == "ok" and refresh:
-            access_token = str(refresh.access_token)
+        if resultado.estado == "ok" and resultado.refresh:
+            access_token = str(resultado.refresh.access_token)
             response = Response(
                 {"status": "ok", "access": access_token},
                 status=status.HTTP_200_OK,
             )
-            set_refresh_cookie(response, str(refresh))
+            set_refresh_cookie(response, str(resultado.refresh))
+            registrar_evento(
+                usuario=resultado.usuario,
+                accion=AccionAuditoria.LOGIN_EXITOSO,
+                entidad="Usuario",
+                entidad_id=str(resultado.usuario.pk),
+                ip=ip,
+            )
             return response
 
-        return Response(
-            {"status": estado, "mfa_token": mfa_token},
-            status=status.HTTP_200_OK,
+        payload = {"status": resultado.estado}
+        if resultado.mfa_token:
+            payload["mfa_token"] = resultado.mfa_token
+        if resultado.password_token:
+            payload["password_token"] = resultado.password_token
+        return Response(payload, status=status.HTTP_200_OK)
+
+
+class PasswordChangeView(APIView):
+    """Cambio obligatorio de contraseña con token de propósito password_change."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [MFARateThrottle]
+
+    @extend_schema(
+        summary="Cambio obligatorio de contraseña",
+        request=PasswordChangeRequestSerializer,
+        responses={200: LoginResponseSerializer},
+        tags=["Autenticación"],
+    )
+    def post(self, request):
+        serializer = PasswordChangeRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        ip = get_client_ip(request)
+
+        resultado = cambiar_password_obligatorio(
+            password_token=serializer.validated_data["password_token"],
+            new_password=serializer.validated_data["new_password"],
+            ip=ip,
         )
+
+        registrar_evento(
+            usuario=resultado.usuario,
+            accion=AccionAuditoria.PASSWORD_CAMBIADA,
+            entidad="Usuario",
+            entidad_id=str(resultado.usuario.pk),
+            ip=ip,
+        )
+
+        if resultado.estado == "ok" and resultado.refresh:
+            access_token = str(resultado.refresh.access_token)
+            response = Response(
+                {"status": "ok", "access": access_token},
+                status=status.HTTP_200_OK,
+            )
+            set_refresh_cookie(response, str(resultado.refresh))
+            response["Cache-Control"] = "no-store"
+            registrar_evento(
+                usuario=resultado.usuario,
+                accion=AccionAuditoria.LOGIN_EXITOSO,
+                entidad="Usuario",
+                entidad_id=str(resultado.usuario.pk),
+                ip=ip,
+            )
+            return response
+
+        payload = {"status": resultado.estado}
+        if resultado.mfa_token:
+            payload["mfa_token"] = resultado.mfa_token
+        if resultado.password_token:
+            payload["password_token"] = resultado.password_token
+        response = Response(payload, status=status.HTTP_200_OK)
+        response["Cache-Control"] = "no-store"
+        return response
 
 
 class MFASetupView(APIView):
-    """
-    Inicia el enrolamiento del segundo factor.
-    Devuelve la clave secreta en texto para copiado manual y la URI otpauth://
-    para que el cliente dibuje el código QR (el backend no genera imágenes).
-    """
+    """Inicia enrolamiento MFA y devuelve secreto + otpauth URI."""
 
     permission_classes = [AllowAny]
     throttle_classes = [MFARateThrottle]
 
     @extend_schema(
         summary="Configurar segundo factor (MFA Setup)",
-        description="Genera el secreto TOTP y la URI otpauth:// correspondiente a partir del mfa_token de enrolamiento.",
         request=MFASetupRequestSerializer,
         responses={200: MFASetupResponseSerializer},
         tags=["Autenticación MFA"],
@@ -114,23 +188,18 @@ class MFASetupView(APIView):
     def post(self, request):
         serializer = MFASetupRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         datos_setup = iniciar_setup_mfa(mfa_token=serializer.validated_data["mfa_token"])
         return Response(datos_setup, status=status.HTTP_200_OK)
 
 
 class MFAConfirmView(APIView):
-    """
-    Confirma y activa el segundo factor del usuario con su primer código de 6 dígitos.
-    Devuelve los 10 códigos de recuperación (mostrados una única vez) y abre la sesión.
-    """
+    """Confirma activación de MFA, genera recovery codes y abre sesión."""
 
     permission_classes = [AllowAny]
     throttle_classes = [MFARateThrottle]
 
     @extend_schema(
         summary="Confirmar segundo factor (MFA Confirm)",
-        description="Activa el dispositivo MFA con el primer código válido, genera los códigos de recuperación y abre sesión.",
         request=MFAConfirmRequestSerializer,
         responses={200: MFAConfirmResponseSerializer},
         tags=["Autenticación MFA"],
@@ -138,6 +207,7 @@ class MFAConfirmView(APIView):
     def post(self, request):
         serializer = MFAConfirmRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        ip = get_client_ip(request)
 
         refresh, recovery_codes, user = confirmar_setup_mfa(
             mfa_token=serializer.validated_data["mfa_token"],
@@ -146,29 +216,35 @@ class MFAConfirmView(APIView):
 
         access_token = str(refresh.access_token)
         response = Response(
-            {
-                "status": "ok",
-                "access": access_token,
-                "recovery_codes": recovery_codes,
-            },
+            {"status": "ok", "access": access_token, "recovery_codes": recovery_codes},
             status=status.HTTP_200_OK,
         )
         set_refresh_cookie(response, str(refresh))
+        registrar_evento(
+            usuario=user,
+            accion=AccionAuditoria.MFA_ACTIVADO,
+            entidad="Usuario",
+            entidad_id=str(user.pk),
+            ip=ip,
+        )
+        registrar_evento(
+            usuario=user,
+            accion=AccionAuditoria.LOGIN_EXITOSO,
+            entidad="Usuario",
+            entidad_id=str(user.pk),
+            ip=ip,
+        )
         return response
 
 
 class MFAVerifyView(APIView):
-    """
-    Verifica el segundo factor durante el login habitual.
-    Acepta un código TOTP de 6 dígitos o un código de recuperación de emergencia.
-    """
+    """Verifica TOTP o código de recuperación y abre sesión."""
 
     permission_classes = [AllowAny]
     throttle_classes = [MFARateThrottle]
 
     @extend_schema(
         summary="Verificar segundo factor (MFA Verify)",
-        description="Verifica un código TOTP o de recuperación tras el paso 1 de credenciales y abre la sesión.",
         request=MFAVerifyRequestSerializer,
         responses={
             200: inline_serializer(
@@ -184,12 +260,23 @@ class MFAVerifyView(APIView):
     def post(self, request):
         serializer = MFAVerifyRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        ip = get_client_ip(request)
 
-        refresh, user = verificar_mfa_sesion(
-            mfa_token=serializer.validated_data["mfa_token"],
-            code=serializer.validated_data.get("code"),
-            recovery_code=serializer.validated_data.get("recovery_code"),
-        )
+        try:
+            refresh, user = verificar_mfa_sesion(
+                mfa_token=serializer.validated_data["mfa_token"],
+                code=serializer.validated_data.get("code"),
+                recovery_code=serializer.validated_data.get("recovery_code"),
+            )
+        except CredencialesInvalidasError:
+            registrar_evento(
+                usuario=None,
+                accion=AccionAuditoria.MFA_RECHAZADO,
+                entidad="Auth",
+                entidad_id="",
+                ip=ip,
+            )
+            raise
 
         access_token = str(refresh.access_token)
         response = Response(
@@ -197,20 +284,30 @@ class MFAVerifyView(APIView):
             status=status.HTTP_200_OK,
         )
         set_refresh_cookie(response, str(refresh))
+        registrar_evento(
+            usuario=user,
+            accion=AccionAuditoria.MFA_VERIFICADO,
+            entidad="Usuario",
+            entidad_id=str(user.pk),
+            ip=ip,
+        )
+        registrar_evento(
+            usuario=user,
+            accion=AccionAuditoria.LOGIN_EXITOSO,
+            entidad="Usuario",
+            entidad_id=str(user.pk),
+            ip=ip,
+        )
         return response
 
 
 class TokenRefreshView(APIView):
-    """
-    Renueva el access token a partir de la cookie de refresco HttpOnly.
-    Rota el token de refresco y coloca el anterior en lista negra.
-    """
+    """Renueva access token desde cookie HttpOnly, rotando refresh."""
 
     permission_classes = [AllowAny]
 
     @extend_schema(
         summary="Refrescar sesión",
-        description="Lee la cookie de refresco HttpOnly y entrega un nuevo access token, rotando la cookie.",
         responses={200: TokenRefreshResponseSerializer},
         tags=["Autenticación"],
     )
@@ -218,55 +315,54 @@ class TokenRefreshView(APIView):
         cookie_refresh = request.COOKIES.get(REFRESH_COOKIE_NAME)
         access_token, nuevo_refresh = rotar_token_refresco(cookie_refresh)
 
-        response = Response(
-            {"status": "ok", "access": access_token},
-            status=status.HTTP_200_OK,
-        )
+        response = Response({"status": "ok", "access": access_token}, status=status.HTTP_200_OK)
         set_refresh_cookie(response, nuevo_refresh)
         return response
 
 
 class LogoutView(APIView):
-    """
-    Cierra la sesión del usuario invalidando el refresh token en la lista negra
-    y borrando la cookie HttpOnly.
-    """
+    """Cierra sesión invalidando refresh token y cookie."""
 
     permission_classes = [AllowAny]
 
     @extend_schema(
         summary="Cerrar sesión",
-        description="Invalida el token de refresco en la lista negra y elimina la cookie de sesión.",
         responses={
             200: inline_serializer(
-                name="LogoutResponse",
-                fields={"detail": serializers.CharField()},
+                name="LogoutResponse", fields={"detail": serializers.CharField()}
             )
         },
         tags=["Autenticación"],
     )
     def post(self, request):
         cookie_refresh = request.COOKIES.get(REFRESH_COOKIE_NAME)
+        ip = get_client_ip(request)
+        user = (
+            request.user
+            if getattr(request, "user", None) and request.user.is_authenticated
+            else None
+        )
         invalidar_sesion(cookie_refresh)
 
-        response = Response(
-            {"detail": "Sesión cerrada correctamente."},
-            status=status.HTTP_200_OK,
-        )
+        response = Response({"detail": "Sesión cerrada correctamente."}, status=status.HTTP_200_OK)
         delete_refresh_cookie(response)
+        registrar_evento(
+            usuario=user,
+            accion=AccionAuditoria.LOGOUT,
+            entidad="Usuario",
+            entidad_id=str(user.pk) if user else "",
+            ip=ip,
+        )
         return response
 
 
 class MeView(APIView):
-    """
-    Retorna el perfil del usuario autenticado actualmente.
-    """
+    """Retorna el perfil del usuario autenticado."""
 
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
         summary="Usuario actual",
-        description="Retorna id, correo, nombre completo, rol en el sistema y si tiene MFA activo.",
         responses={200: UsuarioMeSerializer},
         tags=["Autenticación"],
     )

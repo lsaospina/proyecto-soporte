@@ -4,9 +4,10 @@ from django.core import signing
 
 from apps.common.exceptions import CredencialesInvalidasError
 
-MFA_PURPOSE = Literal["setup", "verify"]
+MFA_PURPOSE = Literal["setup", "verify", "password_change"]
 PURPOSE_SETUP = "setup"
 PURPOSE_VERIFY = "verify"
+PURPOSE_PASSWORD_CHANGE = "password_change"
 
 _MFA_SALT = "apps.autenticacion.mfa_token.v1"
 

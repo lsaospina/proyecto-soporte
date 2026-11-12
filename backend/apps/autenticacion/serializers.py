@@ -19,9 +19,12 @@ class LoginRequestSerializer(serializers.Serializer):
 
 
 class LoginResponseSerializer(serializers.Serializer):
-    status = serializers.ChoiceField(choices=["ok", "mfa_required", "mfa_setup_required"])
+    status = serializers.ChoiceField(
+        choices=["ok", "mfa_required", "mfa_setup_required", "password_change_required"]
+    )
     access = serializers.CharField(required=False, allow_null=True)
     mfa_token = serializers.CharField(required=False, allow_null=True)
+    password_token = serializers.CharField(required=False, allow_null=True)
 
 
 class MFASetupRequestSerializer(serializers.Serializer):
@@ -72,6 +75,17 @@ class MFAVerifyRequestSerializer(serializers.Serializer):
 class TokenRefreshResponseSerializer(serializers.Serializer):
     status = serializers.CharField(default="ok")
     access = serializers.CharField()
+
+
+class PasswordChangeRequestSerializer(serializers.Serializer):
+    password_token = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True, write_only=True)
+    confirm_password = serializers.CharField(required=True, write_only=True)
+
+    def validate(self, attrs):
+        if attrs.get("new_password") != attrs.get("confirm_password"):
+            raise serializers.ValidationError({"confirm_password": "Las contraseñas no coinciden."})
+        return attrs
 
 
 class UsuarioMeSerializer(serializers.ModelSerializer):

@@ -6,23 +6,32 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('autenticacion', '0001_initial'),
+        ("autenticacion", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='dispositivomfa',
-            name='usuario',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='dispositivo_mfa', to=settings.AUTH_USER_MODEL, verbose_name='Usuario'),
+            model_name="dispositivomfa",
+            name="usuario",
+            field=models.OneToOneField(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="dispositivo_mfa",
+                to=settings.AUTH_USER_MODEL,
+                verbose_name="Usuario",
+            ),
         ),
         migrations.AddField(
-            model_name='codigorecuperacion',
-            name='dispositivo',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='codigos_recuperacion', to='autenticacion.dispositivomfa', verbose_name='Dispositivo MFA'),
+            model_name="codigorecuperacion",
+            name="dispositivo",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="codigos_recuperacion",
+                to="autenticacion.dispositivomfa",
+                verbose_name="Dispositivo MFA",
+            ),
         ),
     ]

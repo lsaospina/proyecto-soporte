@@ -23,6 +23,8 @@ quién ni desde/hacia dónde; faltan Baja (RF014), repuestos (RF007), Alerta (RF
 Opción A (recomendada, 3FN estricta). Opción B = mantener marca/modelo/categoría como en el MER (denormalización consciente).
 Elección del usuario: `[ ] A   [ ] B   [ ] A con ajustes: ________`
 
+**Aprobaciones parciales para T-002 (2026-11-12):** `RegistroAuditoria` y `Usuario.debe_cambiar_password` → **APROBADO** (solo estas filas/columnas para T-002). El resto del modelo propuesto sigue PENDIENTE.
+
 | Modelo | Campos clave | Constraints / notas |
 |---|---|---|
 | Usuario | email (único), nombre_completo, rol, is_active | AbstractUser; rol: TextChoices |
@@ -57,3 +59,11 @@ Elección del usuario: `[ ] A   [ ] B   [ ] A con ajustes: ________`
 | `Usuario` | usuarios | `email` (unique), `nombre_completo`, `rol` (TextChoices: ADMINISTRADOR/TECNICO/USUARIO_RESPONSABLE), `is_active`, `intentos_fallidos` (int, default 0), `bloqueado_hasta` (DateTimeField nulo) | Hereda `AbstractUser`; `username` desactivado; `BaseModel` (created_at/updated_at) |
 | `DispositivoMFA` | autenticacion | `usuario` (OneToOne → Usuario), `secreto_cifrado` (texto, Fernet), `confirmado` (bool), `ultimo_paso_usado` (int nulo), `created_at`/`updated_at` | Secreto NUNCA en claro; `ultimo_paso_usado` evita reúso de código TOTP |
 | `CodigoRecuperacion` | autenticacion | `dispositivo` (FK → DispositivoMFA), `codigo_hash` (texto, hasher Django), `usado_en` (DateTimeField nulo), `created_at` | 10 por dispositivo; de un solo uso; código en claro mostrado solo al crear |
+
+### Aprobado e implementado en T-002 (APROBADO 2026-11-12)
+
+| Modelo/Campo | App | Campos/Definición | Notas |
+|---|---|---|---|
+| `Usuario.debe_cambiar_password` | usuarios | `BooleanField(default=False)` | Fuerza cambio obligatorio tras creación/reset admin. Migración `usuarios/0002`. |
+| `Usuario.email` (unicidad CI) | usuarios | `UniqueConstraint(Lower("email"), name="usuario_email_ci_unico")` + normalización strip/lower | Migraciones `0003` (data, aborta en colisión) y `0004`. |
+| `RegistroAuditoria` | auditoria | `usuario` FK null SET_NULL, `accion` CharField(40) choices, `entidad` CharField(50,''), `entidad_id` CharField(64,''), `fecha` DateTimeField(auto_now_add), `ip` GenericIPAddressField null | Sin JSON (3FN). Índices fecha/accion/usuario. Solo lectura en admin. Migración `auditoria/0001`. |

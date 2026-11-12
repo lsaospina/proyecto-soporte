@@ -43,6 +43,7 @@ LOCAL_APPS = [
     "apps.common.apps.CommonConfig",
     "apps.usuarios.apps.UsuariosConfig",
     "apps.autenticacion.apps.AutenticacionConfig",
+    "apps.auditoria.apps.AuditoriaConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

@@ -16,4 +16,5 @@ urlpatterns = [
     # Core API v1
     path("api/v1/health/", HealthCheckView.as_view(), name="health-check"),
     path("api/v1/auth/", include("apps.autenticacion.urls")),
+    path("api/v1/usuarios/", include("apps.usuarios.urls")),
 ]

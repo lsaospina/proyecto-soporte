@@ -4,40 +4,113 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='CodigoRecuperacion',
+            name="CodigoRecuperacion",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True, help_text='Momento exacto en que se creó el registro.', verbose_name='Fecha de creación')),
-                ('updated_at', models.DateTimeField(auto_now=True, help_text='Momento exacto de la última modificación.', verbose_name='Fecha de actualización')),
-                ('codigo_hash', models.CharField(help_text='Hash criptográfico del código de recuperación.', max_length=255, verbose_name='Hash del código de recuperación')),
-                ('usado_en', models.DateTimeField(blank=True, help_text='Estampa de tiempo en la que este código fue consumido (un solo uso).', null=True, verbose_name='Fecha de uso')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        auto_now_add=True,
+                        help_text="Momento exacto en que se creó el registro.",
+                        verbose_name="Fecha de creación",
+                    ),
+                ),
+                (
+                    "updated_at",
+                    models.DateTimeField(
+                        auto_now=True,
+                        help_text="Momento exacto de la última modificación.",
+                        verbose_name="Fecha de actualización",
+                    ),
+                ),
+                (
+                    "codigo_hash",
+                    models.CharField(
+                        help_text="Hash criptográfico del código de recuperación.",
+                        max_length=255,
+                        verbose_name="Hash del código de recuperación",
+                    ),
+                ),
+                (
+                    "usado_en",
+                    models.DateTimeField(
+                        blank=True,
+                        help_text="Estampa de tiempo en la que este código fue consumido (un solo uso).",
+                        null=True,
+                        verbose_name="Fecha de uso",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Código de Recuperación',
-                'verbose_name_plural': 'Códigos de Recuperación',
+                "verbose_name": "Código de Recuperación",
+                "verbose_name_plural": "Códigos de Recuperación",
             },
         ),
         migrations.CreateModel(
-            name='DispositivoMFA',
+            name="DispositivoMFA",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True, help_text='Momento exacto en que se creó el registro.', verbose_name='Fecha de creación')),
-                ('updated_at', models.DateTimeField(auto_now=True, help_text='Momento exacto de la última modificación.', verbose_name='Fecha de actualización')),
-                ('secreto_cifrado', models.CharField(help_text='Clave secreta TOTP cifrada con clave simétrica Fernet.', max_length=255, verbose_name='Secreto TOTP cifrado')),
-                ('confirmado', models.BooleanField(default=False, help_text='Indica si el usuario completó satisfactoriamente el primer enrolamiento.', verbose_name='Dispositivo confirmado')),
-                ('ultimo_paso_usado', models.BigIntegerField(blank=True, help_text='Paso temporal del último código TOTP verificado con éxito (evita repetición).', null=True, verbose_name='Último paso TOTP usado')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        auto_now_add=True,
+                        help_text="Momento exacto en que se creó el registro.",
+                        verbose_name="Fecha de creación",
+                    ),
+                ),
+                (
+                    "updated_at",
+                    models.DateTimeField(
+                        auto_now=True,
+                        help_text="Momento exacto de la última modificación.",
+                        verbose_name="Fecha de actualización",
+                    ),
+                ),
+                (
+                    "secreto_cifrado",
+                    models.CharField(
+                        help_text="Clave secreta TOTP cifrada con clave simétrica Fernet.",
+                        max_length=255,
+                        verbose_name="Secreto TOTP cifrado",
+                    ),
+                ),
+                (
+                    "confirmado",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Indica si el usuario completó satisfactoriamente el primer enrolamiento.",
+                        verbose_name="Dispositivo confirmado",
+                    ),
+                ),
+                (
+                    "ultimo_paso_usado",
+                    models.BigIntegerField(
+                        blank=True,
+                        help_text="Paso temporal del último código TOTP verificado con éxito (evita repetición).",
+                        null=True,
+                        verbose_name="Último paso TOTP usado",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Dispositivo MFA',
-                'verbose_name_plural': 'Dispositivos MFA',
+                "verbose_name": "Dispositivo MFA",
+                "verbose_name_plural": "Dispositivos MFA",
             },
         ),
     ]

@@ -2,9 +2,12 @@ from datetime import timedelta
 
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+from django.db.models.functions import Lower
 from django.utils import timezone
 
 from apps.common.models import BaseModel
+
+from .utils import normalizar_email
 
 
 class RolChoices(models.TextChoices):
@@ -19,7 +22,7 @@ class UsuarioManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError("El correo electrónico es obligatorio.")
-        email = self.normalize_email(email)
+        email = normalizar_email(email)
         user = self.model(email=email, **extra_fields)
         if password:
             user.set_password(password)
@@ -76,6 +79,11 @@ class Usuario(AbstractUser, BaseModel):
         verbose_name="Bloqueado hasta",
         help_text="Estampa de tiempo hasta la cual la cuenta no puede autenticarse.",
     )
+    debe_cambiar_password = models.BooleanField(
+        default=False,
+        verbose_name="Debe cambiar contraseña",
+        help_text="Indica si el usuario debe cambiar su contraseña en el próximo inicio de sesión.",
+    )
 
     objects = UsuarioManager()
 
@@ -86,6 +94,12 @@ class Usuario(AbstractUser, BaseModel):
         verbose_name = "Usuario"
         verbose_name_plural = "Usuarios"
         ordering = ["email"]
+        constraints = [
+            models.UniqueConstraint(
+                Lower("email"),
+                name="usuario_email_ci_unico",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.email} ({self.get_rol_display()})"

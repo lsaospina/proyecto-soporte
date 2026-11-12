@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 
 from django.conf import settings
+from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
 from django.utils import timezone
 from rest_framework_simplejwt.exceptions import TokenError
@@ -12,7 +13,9 @@ from apps.common.exceptions import (
     CuentaBloqueadaError,
     ReglaDeNegocioError,
 )
+from apps.common.sessions import revocar_tokens_refresco
 from apps.usuarios.models import Usuario
+from apps.usuarios.utils import normalizar_email
 
 from .crypto import (
     cifrar_secreto,
@@ -25,33 +28,51 @@ from .crypto import (
 )
 from .models import CodigoRecuperacion, DispositivoMFA
 from .tokens import (
+    PURPOSE_PASSWORD_CHANGE,
     PURPOSE_SETUP,
     PURPOSE_VERIFY,
     generar_mfa_token,
     validar_mfa_token,
 )
+from .types import ResultadoAutenticacion
 
 logger = logging.getLogger(__name__)
 
 
-def autenticar_usuario_paso1(
-    email: str,
-    password: str,
-) -> tuple[str, str | None, RefreshToken | None, Usuario]:
+def _resolver_estado_post_autenticacion(user: Usuario) -> ResultadoAutenticacion:
+    """Determina el siguiente estado tras credenciales válidas (o cambio de contraseña)."""
+    dispositivo = getattr(user, "dispositivo_mfa", None)
+    if dispositivo and dispositivo.confirmado:
+        mfa_token = generar_mfa_token(user.id, purpose=PURPOSE_VERIFY)
+        logger.info("MFA requerido para user_id=%s", user.id)
+        return ResultadoAutenticacion(estado="mfa_required", usuario=user, mfa_token=mfa_token)
+
+    mfa_enforced = getattr(settings, "MFA_ENFORCED", True)
+    if mfa_enforced:
+        mfa_token = generar_mfa_token(user.id, purpose=PURPOSE_SETUP)
+        logger.info("Configuración obligatoria de MFA para user_id=%s", user.id)
+        return ResultadoAutenticacion(
+            estado="mfa_setup_required", usuario=user, mfa_token=mfa_token
+        )
+
+    user.resetear_intentos_fallidos()
+    refresh = RefreshToken.for_user(user)
+    logger.info("Autenticación directa exitosa para user_id=%s", user.id)
+    return ResultadoAutenticacion(estado="ok", usuario=user, refresh=refresh)
+
+
+def autenticar_usuario_paso1(email: str, password: str, *, ip=None) -> ResultadoAutenticacion:
     """
     Paso 1 del flujo de autenticación:
     Valida credenciales y evalúa el estado del segundo factor.
-    Retorna (estado, mfa_token, refresh_token, usuario)
-    Estados posibles:
-      - 'ok': Acceso directo concedido (solo si MFA no es forzado y usuario no tiene MFA).
-      - 'mfa_required': Requiere ingresar código de segundo factor.
-      - 'mfa_setup_required': Requiere enrolamiento inicial de segundo factor.
+    Estados posibles: ok, mfa_required, mfa_setup_required, password_change_required.
+    No registra LOGIN_EXITOSO (solo al emitir sesión final).
     """
-    email_normalizado = email.strip().lower()
+    email_normalizado = normalizar_email(email)
     user = Usuario.objects.filter(email__iexact=email_normalizado).first()
 
     if not user:
-        logger.warning("Intento de login fallido: usuario no encontrado para email proporcionado.")
+        logger.warning("Intento de login fallido: usuario no encontrado.")
         raise CredencialesInvalidasError("Credenciales inválidas.")
 
     if user.esta_bloqueado:
@@ -79,33 +100,76 @@ def autenticar_usuario_paso1(
         logger.warning("Intento de acceso de usuario inactivo: user_id=%s", user.id)
         raise CredencialesInvalidasError("El usuario se encuentra inactivo en el sistema.")
 
-    # Verificar configuración de MFA
-    dispositivo = getattr(user, "dispositivo_mfa", None)
-    if dispositivo and dispositivo.confirmado:
-        mfa_token = generar_mfa_token(user.id, purpose=PURPOSE_VERIFY)
-        logger.info("Credenciales válidas. MFA requerido para user_id=%s", user.id)
-        return "mfa_required", mfa_token, None, user
-
-    mfa_enforced = getattr(settings, "MFA_ENFORCED", True)
-    if mfa_enforced:
-        mfa_token = generar_mfa_token(user.id, purpose=PURPOSE_SETUP)
-        logger.info(
-            "Credenciales válidas. Configuración obligatoria de MFA para user_id=%s",
-            user.id,
+    if user.debe_cambiar_password:
+        password_token = generar_mfa_token(user.id, purpose=PURPOSE_PASSWORD_CHANGE)
+        logger.info("Cambio de contraseña obligatorio para user_id=%s", user.id)
+        return ResultadoAutenticacion(
+            estado="password_change_required", usuario=user, password_token=password_token
         )
-        return "mfa_setup_required", mfa_token, None, user
 
-    # Si MFA no es forzado y no tiene dispositivo
-    user.resetear_intentos_fallidos()
-    refresh = RefreshToken.for_user(user)
-    logger.info("Autenticación directa exitosa para user_id=%s", user.id)
-    return "ok", None, refresh, user
+    return _resolver_estado_post_autenticacion(user)
+
+
+def cambiar_password_obligatorio(
+    password_token: str, new_password: str, *, ip=None
+) -> ResultadoAutenticacion:
+    """
+    Cambia la contraseña cuando debe_cambiar_password es True.
+    Token de un solo uso (se invalida al poner debe_cambiar_password=False).
+    """
+    user_id = validar_mfa_token(password_token, expected_purpose=PURPOSE_PASSWORD_CHANGE)
+    user = Usuario.objects.filter(id=user_id).first()
+    if not user:
+        raise CredencialesInvalidasError("Usuario no encontrado o inactivo.")
+
+    if not user.is_active:
+        raise CredencialesInvalidasError("El usuario se encuentra inactivo en el sistema.")
+
+    if user.esta_bloqueado:
+        raise CuentaBloqueadaError("La cuenta se encuentra temporalmente bloqueada.")
+
+    if not user.debe_cambiar_password:
+        raise ReglaDeNegocioError(
+            "El cambio de contraseña obligatorio ya no es válido.",
+            code="cambio_password_no_requerido",
+        )
+
+    if user.check_password(new_password):
+        raise ReglaDeNegocioError(
+            "La nueva contraseña no puede ser igual a la contraseña actual.",
+            code="password_igual_anterior",
+            errors=[
+                {
+                    "field": "new_password",
+                    "message": "La nueva contraseña debe ser diferente a la actual.",
+                }
+            ],
+        )
+
+    validate_password(new_password, user)
+
+    with transaction.atomic():
+        user.set_password(new_password)
+        user.debe_cambiar_password = False
+        user.intentos_fallidos = 0
+        user.bloqueado_hasta = None
+        user.save(
+            update_fields=[
+                "password",
+                "debe_cambiar_password",
+                "intentos_fallidos",
+                "bloqueado_hasta",
+                "updated_at",
+            ]
+        )
+        revocar_tokens_refresco(user)
+
+    logger.info("Cambio obligatorio de contraseña completado para user_id=%s", user.id)
+    return _resolver_estado_post_autenticacion(user)
 
 
 def iniciar_setup_mfa(mfa_token: str) -> dict[str, str]:
-    """
-    Genera el secreto TOTP y la URI para que el usuario configure su app autenticadora.
-    """
+    """Genera el secreto TOTP y la URI para configurar la app autenticadora."""
     user_id = validar_mfa_token(mfa_token, expected_purpose=PURPOSE_SETUP)
     user = Usuario.objects.filter(id=user_id, is_active=True).first()
     if not user:
@@ -140,10 +204,8 @@ def confirmar_setup_mfa(
     code: str,
     clock: datetime | None = None,
 ) -> tuple[RefreshToken, list[str], Usuario]:
-    """
-    Valida el primer código del usuario para activar el dispositivo MFA,
-    genera los códigos de recuperación de emergencia y abre sesión.
-    """
+    """Valida el primer código, activa MFA, genera códigos de recuperación y abre sesión."""
+
     user_id = validar_mfa_token(mfa_token, expected_purpose=PURPOSE_SETUP)
     user = Usuario.objects.filter(id=user_id, is_active=True).first()
     if not user:
@@ -186,7 +248,6 @@ def confirmar_setup_mfa(
         dispositivo.ultimo_paso_usado = matched_step
         dispositivo.save(update_fields=["confirmado", "ultimo_paso_usado", "updated_at"])
 
-        # Generar 10 códigos de recuperación
         dispositivo.codigos_recuperacion.all().delete()
         pares_codigos = generar_codigos_recuperacion(cantidad=10)
         codigos_planos = []
@@ -199,7 +260,7 @@ def confirmar_setup_mfa(
 
     user.resetear_intentos_fallidos()
     refresh = RefreshToken.for_user(user)
-    logger.info("Dispositivo MFA confirmado y activado exitosamente para user_id=%s", user.id)
+    logger.info("Dispositivo MFA confirmado y activado para user_id=%s", user.id)
 
     return refresh, codigos_planos, user
 
@@ -210,9 +271,8 @@ def verificar_mfa_sesion(
     recovery_code: str | None = None,
     clock: datetime | None = None,
 ) -> tuple[RefreshToken, Usuario]:
-    """
-    Verifica un código TOTP o un código de recuperación para abrir sesión.
-    """
+    """Verifica un código TOTP o de recuperación para abrir sesión."""
+
     user_id = validar_mfa_token(mfa_token, expected_purpose=PURPOSE_VERIFY)
     user = Usuario.objects.filter(id=user_id, is_active=True).first()
     if not user:
@@ -228,7 +288,6 @@ def verificar_mfa_sesion(
             code="mfa_no_configurado",
         )
 
-    # 1. Verificación mediante código TOTP
     if code:
         secreto_plano = descifrar_secreto(dispositivo.secreto_cifrado)
         valido, matched_step = verificar_totp(
@@ -260,7 +319,6 @@ def verificar_mfa_sesion(
         logger.info("MFA verificado correctamente por TOTP para user_id=%s", user.id)
         return refresh, user
 
-    # 2. Verificación mediante código de recuperación de emergencia
     if recovery_code:
         codigos_disponibles = dispositivo.codigos_recuperacion.filter(usado_en__isnull=True)
         codigo_encontrado = None
@@ -288,9 +346,8 @@ def verificar_mfa_sesion(
         user.resetear_intentos_fallidos()
         refresh = RefreshToken.for_user(user)
         logger.info(
-            "MFA verificado mediante código de recuperación para user_id=%s. Código consumido id=%s",
+            "MFA verificado mediante código de recuperación para user_id=%s.",
             user.id,
-            codigo_encontrado.id,
         )
         return refresh, user
 
@@ -300,6 +357,7 @@ def verificar_mfa_sesion(
 def rotar_token_refresco(refresh_token_str: str) -> tuple[str, str]:
     """
     Valida el token de refresco, lo rota y añade a lista negra el anterior.
+    Comprueba explícitamente is_active y no bloqueado.
     Retorna (nuevo_access_token, nuevo_refresh_token).
     """
     if not refresh_token_str:
@@ -310,15 +368,19 @@ def rotar_token_refresco(refresh_token_str: str) -> tuple[str, str]:
 
     try:
         token = RefreshToken(refresh_token_str)
-        # Rotación manual segura para persistir en lista negra
         user_id = token.payload.get("user_id")
-        user = Usuario.objects.filter(id=user_id, is_active=True).first()
-        if not user or user.esta_bloqueado:
-            raise CredencialesInvalidasError("Usuario inválido o bloqueado.")
+        user = Usuario.objects.filter(id=user_id).first()
+        if not user or not user.is_active or user.esta_bloqueado:
+            raise CredencialesInvalidasError(
+                "Usuario inválido, inactivo o bloqueado.",
+                code="usuario_invalido",
+            )
 
         token.blacklist()
         nuevo_token = RefreshToken.for_user(user)
         return str(nuevo_token.access_token), str(nuevo_token)
+    except CredencialesInvalidasError:
+        raise
     except TokenError as exc:
         logger.warning("Fallo en rotación de refresh token: %s", exc)
         raise CredencialesInvalidasError(
@@ -328,9 +390,7 @@ def rotar_token_refresco(refresh_token_str: str) -> tuple[str, str]:
 
 
 def invalidar_sesion(refresh_token_str: str | None) -> None:
-    """
-    Añade a lista negra el refresh token para cerrar sesión.
-    """
+    """Añade a lista negra el refresh token para cerrar sesión."""
     if not refresh_token_str:
         return
     try:
