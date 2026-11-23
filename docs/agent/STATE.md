@@ -4,8 +4,7 @@
 > Última actualización: 2026-11-12 · por: agente (cierre T-002 FASE B)
 
 ## Tarea actual
-**T-002 — Usuarios y acceso completo (RF002 + auditoría + resets)** → `docs/agent/tasks/T-002-usuarios.md`. Estado: **COMPLETA** (Fase A commiteada por usuario; Fase B implementada en esta sesión).
-Siguiente tarea: **T-003 — Catálogos (Sede, Ubicación, Categoría, Marca, Modelo)** (depende de DATA_MODEL aprobado).
+**T-003 — Catálogos (Fase A backend COMPLETA; Fase B frontend pendiente)** → `docs/agent/tasks/T-003-catalogos.md` (por crear). Fase A: app `catalogos` + migración + auditoría CATALOGO_* + tests (38 passed). Siguiente: Fase B frontend.
 
 ## Hecho
 - Documento de análisis y diseño (docx), mockups, diccionario de datos (baseline). Repo y documentación para agentes instalada.

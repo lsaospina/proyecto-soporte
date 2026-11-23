@@ -18,6 +18,10 @@ class AccionAuditoria(models.TextChoices):
     USUARIO_REACTIVADO = "USUARIO_REACTIVADO", "Usuario reactivado"
     PASSWORD_RESETEADA = "PASSWORD_RESETEADA", "Contraseña reseteada"
     MFA_RESETEADO = "MFA_RESETEADO", "MFA reseteado"
+    CATALOGO_CREADO = "CATALOGO_CREADO", "Catálogo creado"
+    CATALOGO_ACTUALIZADO = "CATALOGO_ACTUALIZADO", "Catálogo actualizado"
+    CATALOGO_INACTIVADO = "CATALOGO_INACTIVADO", "Catálogo inactivado"
+    CATALOGO_REACTIVADO = "CATALOGO_REACTIVADO", "Catálogo reactivado"
 
 
 class RegistroAuditoria(BaseModel):

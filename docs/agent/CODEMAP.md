@@ -24,6 +24,21 @@
 - `backend/apps/common/sessions.py` — `revocar_tokens_refresco(usuario)` (blacklist de OutstandingTokens)
 - `backend/apps/common/views.py` — `HealthCheckView` (GET /api/v1/health/)
 
+### App catalogos
+- `backend/apps/catalogos/models.py` — `Sede`, `Ubicacion`, `Categoria`, `Marca`, `ModeloActivo` (is_active, HistoricalRecords)
+- `backend/apps/catalogos/utils.py` — `normalizar_nombre`
+- `backend/apps/catalogos/selectors.py` — listados con select_related
+- `backend/apps/catalogos/services.py` — crear/actualizar/inactivar/reactivar + auditoría + _history_user
+- `backend/apps/catalogos/serializers.py` — serializers de los 5 catálogos
+- `backend/apps/catalogos/filters.py` — filtros django-filter
+- `backend/apps/catalogos/views.py` — ViewSets base + 5 recursos
+- `backend/apps/catalogos/urls.py` — router `/api/v1/` (sedes, ubicaciones, categorias, marcas, modelos)
+- `backend/apps/catalogos/permissions.py` — `IsCatalogoAccess` (admin escribe, técnico lee, responsable sin acceso)
+- `backend/apps/catalogos/admin.py` — admin de los 5 catálogos
+- `backend/apps/catalogos/migrations/0001_initial.py` — esquema inicial catalogos + histórico
+- `backend/apps/catalogos/tests/unit/test_normalizacion.py` — normalización de nombres
+- `backend/apps/catalogos/tests/integration/test_catalogos_api.py` — permisos, unicidad CI, guardas, PROTECT, historial, auditoría, num queries, IntegrityError
+
 ### App auditoria
 - `backend/apps/auditoria/models.py` — `AccionAuditoria` (TextChoices) y `RegistroAuditoria` (eventos de acceso/gestión, sin JSON)
 - `backend/apps/auditoria/services.py` — `registrar_evento(...)` (escritura única de auditoría)
