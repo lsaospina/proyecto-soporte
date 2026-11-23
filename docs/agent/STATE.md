@@ -4,7 +4,7 @@
 > Última actualización: 2026-11-12 · por: agente (cierre T-002 FASE B)
 
 ## Tarea actual
-**T-003 — Catálogos (Fase A backend COMPLETA; Fase B frontend pendiente)** → `docs/agent/tasks/T-003-catalogos.md` (por crear). Fase A: app `catalogos` + migración + auditoría CATALOGO_* + tests (38 passed). Siguiente: Fase B frontend.
+**T-003 — Catálogos (Fase A backend + Fase B frontend COMPLETAS; Fase C activos backend pendiente)**. Fase B: `/catalogos` solo admin, pantalla genérica por pestañas, menú por rol. Siguiente: Fase C activos backend.
 
 ## Hecho
 - Documento de análisis y diseño (docx), mockups, diccionario de datos (baseline). Repo y documentación para agentes instalada.

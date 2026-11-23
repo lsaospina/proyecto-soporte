@@ -1,10 +1,5 @@
-import { AuthProvider } from './features/auth/hooks/useAuth';
-import { Router } from './routes/Router';
+import { AppProviders } from './app-providers';
 
 export default function App() {
-  return (
-    <AuthProvider>
-      <Router />
-    </AuthProvider>
-  );
+  return <AppProviders />;
 }

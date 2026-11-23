@@ -130,6 +130,11 @@
 - `schemas/__tests__/mfa.schema.test.ts` — pruebas schemas MFA
 - `components/__tests__/RecoveryCodesDisplay.test.tsx` — prueba de componente recovery codes
 
+### Módulo Catálogos (`frontend/src/features/catalogos/`)
+- `api/catalogos.api.ts` — cliente HTTP catálogos
+- `types/index.ts` — tipos TS de catálogos
+- `pages/CatalogosPage.tsx` — pantalla genérica por pestañas
+
 ### Módulo Usuarios (`frontend/src/features/usuarios/`)
 - `api/usuarios.api.ts` — API `/api/v1/usuarios/` (listar, CRUD parcial, reset password/MFA, activar/desactivar)
 - `types/index.ts` — tipos TS de usuario, payloads y respuestas (incluye temporal)
