@@ -26,10 +26,10 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', to: '/dashboard', icon: <LayoutDashboard size={20} />, roles: ['ADMINISTRADOR'] },
+  { label: 'Catálogos', to: '/catalogos', icon: <Database size={20} />, roles: ['ADMINISTRADOR'] },
   { label: 'Activos', to: '/activos', icon: <Monitor size={20} />, roles: ['ADMINISTRADOR', 'TECNICO', 'USUARIO_RESPONSABLE'] },
   { label: 'Mantenimientos', to: '/mantenimientos', icon: <Wrench size={20} />, roles: ['ADMINISTRADOR', 'TECNICO'] },
   { label: 'Usuarios', to: '/usuarios', icon: <Users size={20} />, roles: ['ADMINISTRADOR'] },
-  { label: 'Catálogos', to: '/catalogos', icon: <Database size={20} />, roles: ['ADMINISTRADOR'] },
   { label: 'Licencias y garantÃ­as', to: '/licencias', icon: <FileKey size={20} />, roles: ['ADMINISTRADOR'] },
   { label: 'Reportes', to: '/reportes', icon: <BarChart3 size={20} />, roles: ['ADMINISTRADOR'] },
   { label: 'ConfiguraciÃ³n', to: '/configuracion', icon: <Settings size={20} />, roles: ['ADMINISTRADOR'] },
