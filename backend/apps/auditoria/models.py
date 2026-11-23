@@ -22,6 +22,10 @@ class AccionAuditoria(models.TextChoices):
     CATALOGO_ACTUALIZADO = "CATALOGO_ACTUALIZADO", "Catálogo actualizado"
     CATALOGO_INACTIVADO = "CATALOGO_INACTIVADO", "Catálogo inactivado"
     CATALOGO_REACTIVADO = "CATALOGO_REACTIVADO", "Catálogo reactivado"
+    ACTIVO_CREADO = "ACTIVO_CREADO", "Activo creado"
+    ACTIVO_ACTUALIZADO = "ACTIVO_ACTUALIZADO", "Activo actualizado"
+    ACTIVO_INACTIVADO = "ACTIVO_INACTIVADO", "Activo inactivado"
+    ACTIVO_REACTIVADO = "ACTIVO_REACTIVADO", "Activo reactivado"
 
 
 class RegistroAuditoria(BaseModel):

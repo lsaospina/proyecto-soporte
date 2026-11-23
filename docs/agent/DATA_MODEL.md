@@ -35,7 +35,7 @@ Elección del usuario: `[ ] A   [ ] B   [ ] A con ajustes: ________`
 | Categoria | nombre, descripcion | nombre único CI. is_active | APROBADO (T-003) |
 | Marca | nombre | único CI. is_active | APROBADO (T-003) |
 | ModeloActivo | marca FK, categoria FK, nombre | único (marca, nombre) CI. is_active | APROBADO (T-003) |
-| Activo | serial, modelo FK, fecha_adquisicion, valor_adquisicion (opc.), estado, codigo_qr, ubicacion FK, is_active | serial y codigo_qr únicos; estado: TextChoices (DISPONIBLE, ASIGNADO, EN_MANTENIMIENTO, DADO_DE_BAJA) | APROBADO (T-004) |
+| Activo | serial, modelo FK, fecha_adquisicion, valor_adquisicion (opc.), estado, codigo_qr, procesador (opc.), ram_gb (opc.), almacenamiento_gb (opc.), direccion_mac (opc., única si no vacía), observaciones (opc.), is_active | serial y codigo_qr únicos; estado: TextChoices (DISPONIBLE, ASIGNADO, EN_MANTENIMIENTO, DADO_DE_BAJA); sin ubicacion (ubicación efectiva se deriva de la asignación, 3FN) | APROBADO (T-004) |
 | AsignacionActivo | activo FK, usuario FK, asignado_por FK, fecha_inicio, fecha_fin (nulo), observacion | único parcial: un activo con una sola asignación abierta (`fecha_fin` nula). El responsable actual se **deriva**, no se guarda en Activo | PENDIENTE |
 | MovimientoActivo (Trazabilidad) | activo FK, tipo_movimiento, fecha_movimiento, usuario FK, ubicacion_origen FK, ubicacion_destino FK, observacion | Solo inserción (append-only) | PENDIENTE |
 | Mantenimiento | activo FK, tipo (PREVENTIVO/CORRECTIVO), estado, fecha_programada, fecha_realizacion, tecnico FK, costo, observacion, incidente FK (opc.) | CHECK costo ≥ 0 | PENDIENTE |
@@ -79,4 +79,4 @@ Elección del usuario: `[ ] A   [ ] B   [ ] A con ajustes: ________`
 | `Categoria` | catalogos | `nombre` (único CI), `descripcion` (texto, blank), `is_active` | Fase A |
 | `Marca` | catalogos | `nombre` (único CI), `is_active` | Fase A |
 | `ModeloActivo` | catalogos | `marca` FK PROTECT, `categoria` FK PROTECT, `nombre` (único por marca CI), `is_active` | Fase A |
-| `Activo` | activos | `serial` (único CI, normalizado MAYÚSCULAS), `modelo` FK PROTECT, `fecha_adquisicion` (DateField, no futura), `valor_adquisicion` (Decimal 12,2, opcional, ≥0), `estado` (TextChoices, default DISPONIBLE, read-only), `codigo_qr` (único inmutable, AST-AAAA-NNNNNN), `ubicacion` FK PROTECT, `is_active` | Fase C |
+| `Activo` | activos | `serial` (único CI, normalizado MAYÚSCULAS), `modelo` FK PROTECT, `fecha_adquisicion` (DateField, no futura), `valor_adquisicion` (Decimal 12,2, opcional, ≥0), `estado` (TextChoices, default DISPONIBLE, read-only), `codigo_qr` (único inmutable, AST-AAAA-NNNNNN), `procesador` (texto, opc.), `ram_gb` (int, opc., >0), `almacenamiento_gb` (int, opc., >0), `direccion_mac` (opc., única si no vacía, formato AA:BB:CC:DD:EE:FF), `observaciones` (texto, opc.), `is_active` | Fase C (sin ubicacion; ubicación efectiva derivada en T-005) |

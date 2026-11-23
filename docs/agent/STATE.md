@@ -4,7 +4,7 @@
 > Última actualización: 2026-11-12 · por: agente (cierre T-002 FASE B)
 
 ## Tarea actual
-**T-003 — Catálogos (Fase A backend + Fase B frontend COMPLETAS; Fase C activos backend pendiente)**. Fase B: `/catalogos` solo admin, pantalla genérica por pestañas, menú por rol. Siguiente: Fase C activos backend.
+**T-004 — Activos (Fase C backend COMPLETA; Fase D frontend pendiente).** Fase C: app `activos`, migración, ACTIVO_* en auditoría, seed ampliado (40 activos), tests (22 passed). Siguiente: Fase D frontend (espera orden).
 
 ## Hecho
 - Documento de análisis y diseño (docx), mockups, diccionario de datos (baseline). Repo y documentación para agentes instalada.
@@ -41,7 +41,7 @@
 - Retención/depuración y política de consulta de la tabla `RegistroAuditoria` (crecimiento, archivado, índices/particionado según volumen); UI de consulta de auditoría fuera de alcance.
 - Recuperación de contraseña por el propio usuario (flujo de "olvidé mi contraseña" con canal verificado); hoy solo reset administrativo con temporal.
 - Considerar `django-simple-history` para auditoría de cambios en modelos de negocio (ADR-005).
-- Soporte para Docker diferido por decisión del usuario (ejecución actual en local Vite dev server + Django runserver).
+- `Ubicacion` (catálogo) queda sin uso por Activo en T-004 (la ubicación efectiva se deriva de la asignación en T-005). No borrar; reutilizar en T-005.
 
 ## Registro de sesiones (solo las últimas 5, una línea c/u)
 - 2026-11-09: T-001 FASE A completada. Backend esqueleto + autenticación TOTP. 19/19 tests. Sin Docker (local).

@@ -24,6 +24,21 @@
 - `backend/apps/common/sessions.py` — `revocar_tokens_refresco(usuario)` (blacklist de OutstandingTokens)
 - `backend/apps/common/views.py` — `HealthCheckView` (GET /api/v1/health/)
 
+### App activos
+- `backend/apps/activos/models.py` — `Activo`, `EstadoActivo` (simple-history)
+- `backend/apps/activos/utils.py` — `normalizar_serial`, `normalizar_mac`
+- `backend/apps/activos/selectors.py` — `listar_activos` (select_related, filtros)
+- `backend/apps/activos/services.py` — crear/actualizar/inactivar/reactivar/cambiar_estado
+- `backend/apps/activos/serializers.py` — ActivoSerializer, ActivoCreateUpdateSerializer
+- `backend/apps/activos/filters.py` — ActivoFilter
+- `backend/apps/activos/views.py` — ActivoViewSet (list/create/retrieve/partial_update, inactivar/reactivar/historial)
+- `backend/apps/activos/urls.py` — router `/api/v1/activos/`
+- `backend/apps/activos/permissions.py` — `IsActivoAccess`
+- `backend/apps/activos/admin.py` — admin
+- `backend/apps/activos/migrations/0001_initial.py` — esquema inicial
+- `backend/apps/activos/tests/unit/test_activos_unit.py` — normalización, transiciones, fecha futura
+- `backend/apps/activos/tests/integration/test_activos_api.py` — permisos, unicidad, reglas, historial, auditoría, filtros, num queries
+
 ### App catalogos
 - `backend/apps/catalogos/models.py` — `Sede`, `Ubicacion`, `Categoria`, `Marca`, `ModeloActivo` (is_active, HistoricalRecords)
 - `backend/apps/catalogos/utils.py` — `normalizar_nombre`

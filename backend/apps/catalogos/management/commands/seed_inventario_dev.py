@@ -1,6 +1,10 @@
+from datetime import date
+from decimal import Decimal
+
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
+from apps.activos.models import Activo, EstadoActivo
 from apps.catalogos.models import Categoria, Marca, ModeloActivo, Sede, Ubicacion
 from apps.catalogos.utils import normalizar_nombre
 
@@ -72,4 +76,32 @@ class Command(BaseCommand):
                 defaults={"categoria": categorias[cat_n], "is_active": True},
             )
 
-        self.stdout.write(self.style.SUCCESS("Seed de catálogos aplicado."))
+        # 40 activos variados
+        modelos_list = list(ModeloActivo.objects.all())
+        estados = [
+            EstadoActivo.DISPONIBLE,
+            EstadoActivo.ASIGNADO,
+            EstadoActivo.EN_MANTENIMIENTO,
+            EstadoActivo.DADO_DE_BAJA,
+        ]
+        for i in range(40):
+            modelo = modelos_list[i % len(modelos_list)]
+            serial = f"SN-{i + 1:05d}"
+            Activo.objects.get_or_create(
+                serial=serial,
+                defaults={
+                    "modelo": modelo,
+                    "fecha_adquisicion": date(2024, (i % 12) + 1, (i % 28) + 1),
+                    "valor_adquisicion": Decimal("1000.00") + i,
+                    "estado": estados[i % len(estados)],
+                    "codigo_qr": f"AST-2024-{i + 1:06d}",
+                    "procesador": "Intel i5" if i % 2 == 0 else "AMD Ryzen 5",
+                    "ram_gb": 8 if i % 3 == 0 else 16,
+                    "almacenamiento_gb": 256 if i % 2 == 0 else 512,
+                    "direccion_mac": f"AA:BB:CC:DD:EE:{i:02X}",
+                    "observaciones": f"Activo de prueba {i + 1}",
+                    "is_active": True,
+                },
+            )
+
+        self.stdout.write(self.style.SUCCESS("Seed de inventario aplicado."))
