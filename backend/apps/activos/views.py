@@ -44,7 +44,12 @@ class ActivoViewSet(viewsets.ModelViewSet):
             "destroy",
         ):
             return Activo.objects.select_related("modelo__marca", "modelo__categoria")
-        return listar_activos()
+        qs = listar_activos()
+        params = self.request.query_params
+        mostrar_todos = str(params.get("todos", "")).lower() in ("1", "true", "si", "sí")
+        if "is_active" not in params and not mostrar_todos:
+            qs = qs.filter(is_active=True)
+        return qs
 
     def get_serializer_class(self):
         if self.action in ("create", "partial_update", "update"):

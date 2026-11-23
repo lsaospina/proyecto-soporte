@@ -6,8 +6,11 @@ import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
 import { ComingSoonPage } from '../pages/ComingSoonPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { CatalogosPage } from '../features/catalogos/pages/CatalogosPage';
-import { UsuarioFormPage } from '../features/usuarios/pages/UsuarioFormPage';
+import { ActivosDetailPage } from '../features/activos/pages/ActivosDetailPage';
+import { ActivosFormPage } from '../features/activos/pages/ActivosFormPage';
+import { ActivosListPage } from '../features/activos/pages/ActivosListPage';
 import { UsuariosListPage } from '../features/usuarios/pages/UsuariosListPage';
+import { UsuarioFormPage } from '../features/usuarios/pages/UsuarioFormPage';
 
 export function Router() {
   return (
@@ -18,14 +21,22 @@ export function Router() {
           <Route element={<AppShell />}>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/activos" element={<ComingSoonPage title="Activos tecnológicos" />} />
             <Route path="/mantenimientos" element={<ComingSoonPage title="Mantenimientos" />} />
+
             <Route element={<ProtectedRoute roles={['ADMINISTRADOR']} />}>
               <Route path="/catalogos" element={<CatalogosPage />} />
               <Route path="/usuarios" element={<UsuariosListPage />} />
               <Route path="/usuarios/nuevo" element={<UsuarioFormPage />} />
               <Route path="/usuarios/:id/editar" element={<UsuarioFormPage />} />
             </Route>
+
+            <Route element={<ProtectedRoute roles={['ADMINISTRADOR', 'TECNICO']} />}>
+              <Route path="/activos" element={<ActivosListPage />} />
+              <Route path="/activos/nuevo" element={<ActivosFormPage />} />
+              <Route path="/activos/:id" element={<ActivosDetailPage />} />
+              <Route path="/activos/:id/editar" element={<ActivosFormPage />} />
+            </Route>
+
             <Route path="/licencias" element={<ComingSoonPage title="Licencias y garantías" />} />
             <Route path="/reportes" element={<ComingSoonPage title="Reportes" />} />
             <Route path="/configuracion" element={<ComingSoonPage title="Configuración" />} />

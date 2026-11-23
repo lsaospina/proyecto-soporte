@@ -266,3 +266,65 @@ class TestActivosFiltros:
         resp = api_client.get("/api/v1/activos/?search=SEARCHME")
         assert resp.status_code == 200
         assert resp.data["count"] == 1
+
+
+@pytest.mark.django_db
+class TestActivosInactivosVisible:
+    def test_por_defecto_solo_activos(self, api_client, admin_user, modelo):
+        auth(api_client, admin_user)
+        Activo.objects.create(
+            serial="ACT",
+            modelo=modelo,
+            fecha_adquisicion="2024-01-01",
+            codigo_qr="AST-2024-000030",
+            is_active=True,
+        )
+        Activo.objects.create(
+            serial="INA",
+            modelo=modelo,
+            fecha_adquisicion="2024-01-01",
+            codigo_qr="AST-2024-000031",
+            is_active=False,
+        )
+        resp = api_client.get("/api/v1/activos/")
+        assert resp.data["count"] == 1
+        assert resp.data["results"][0]["serial"] == "ACT"
+
+    def test_is_active_false_devuelve_inactivos(self, api_client, admin_user, modelo):
+        auth(api_client, admin_user)
+        Activo.objects.create(
+            serial="ACT2",
+            modelo=modelo,
+            fecha_adquisicion="2024-01-01",
+            codigo_qr="AST-2024-000032",
+            is_active=True,
+        )
+        Activo.objects.create(
+            serial="INA2",
+            modelo=modelo,
+            fecha_adquisicion="2024-01-01",
+            codigo_qr="AST-2024-000033",
+            is_active=False,
+        )
+        resp = api_client.get("/api/v1/activos/?is_active=false")
+        assert resp.data["count"] == 1
+        assert resp.data["results"][0]["serial"] == "INA2"
+
+    def test_todos_devuelve_ambos(self, api_client, admin_user, modelo):
+        auth(api_client, admin_user)
+        Activo.objects.create(
+            serial="ACT3",
+            modelo=modelo,
+            fecha_adquisicion="2024-01-01",
+            codigo_qr="AST-2024-000034",
+            is_active=True,
+        )
+        Activo.objects.create(
+            serial="INA3",
+            modelo=modelo,
+            fecha_adquisicion="2024-01-01",
+            codigo_qr="AST-2024-000035",
+            is_active=False,
+        )
+        resp = api_client.get("/api/v1/activos/?todos=1")
+        assert resp.data["count"] == 2

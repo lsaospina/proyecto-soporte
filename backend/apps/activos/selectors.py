@@ -27,7 +27,8 @@ def listar_activos(
         qs = qs.filter(fecha_adquisicion__gte=fecha_desde)
     if fecha_hasta:
         qs = qs.filter(fecha_adquisicion__lte=fecha_hasta)
-    qs = qs.filter(is_active=is_active) if is_active is not None else qs.filter(is_active=True)
+    if is_active is not None:
+        qs = qs.filter(is_active=is_active)
     if search:
         qs = qs.filter(
             Q(serial__icontains=search)
