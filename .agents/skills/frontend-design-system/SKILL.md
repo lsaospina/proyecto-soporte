@@ -5,34 +5,41 @@ description: Sistema de diseño y reglas del frontend React de este proyecto —
 
 # Frontend: diseño sobrio y consistente
 
-Referencia visual: `docs/design/mockups/` (fig. 11–19). Los mockups guían **estilo y layout**, NO el alcance
-(MFA, SNMP, multi-tenant, depreciación, etc. están fuera de alcance; ver PROJECT_CONTEXT.md).
+Referencia visual principal: `docs/design/mockups/login.html` y `docs/design/mockups/dashboard_principal.html`
+(fuentes de diseño actuales). Los PNG `docs/design/mockups/fig12-fig19*.png` siguen como referencia de estilo/layout
+para los demás módulos. Los mockups guían **estilo y layout**, NO el alcance (MFA ya implementado; SNMP,
+multi-tenant, depreciación, etc. fuera de alcance; ver PROJECT_CONTEXT.md).
+**Fuente de verdad de tokens:** `frontend/src/styles/tokens.css` (si esta skill difiere, manda `tokens.css`).
 
 ## Principios
 Sobrio, denso pero legible, predecible. Misma estructura en todas las pantallas del mismo tipo. Sin gradientes, sin sombras fuertes,
 sin emojis, sin animaciones más allá de transiciones de ~150 ms. Iconos solo `lucide-react` (16/20 px).
 
-## Tokens (definir en `src/styles/tokens.css` y mapear en el tema de Tailwind; no usar colores sueltos)
+## Tokens (definidos en `frontend/src/styles/tokens.css`; no usar colores sueltos)
 | Token | Valor | Uso |
 |---|---|---|
-| `--sidebar` | `#213145` | Barra lateral |
-| `--primary` | `#024DB9` | Botón principal, ítem activo, enlaces |
+| `--sidebar` | `#213145` | Barra lateral / acentos oscuros |
+| `--sidebar-hover` / `--sidebar-active` | `#2a3f57` / `#1a2738` | Estados sidebar |
+| `--primary` / `--primary-hover` / `--primary-light` | `#005FAA` / `#004883` / `#DBEAFE` | Acción principal, acento, fondos suaves |
 | `--background` | `#F8F9FF` | Fondo de la app |
-| `--surface` | `#FFFFFF` | Tarjetas, tablas, formularios |
-| `--border` | `#E2E8F0` | Bordes (1 px) |
-| `--text` / `--text-muted` | `#0F172A` / `#475569` | Texto principal / secundario |
-| Éxito | texto `#15803D` · fondo `#DCFCE7` | Operativo, vigente |
-| Advertencia | `#B45309` · `#FEF3C7` | En mantenimiento, por vencer |
-| Peligro | `#B91C1C` · `#FEE2E2` | Crítico, vencido, baja |
-| Info | `#1D4ED8` · `#DBEAFE` | En bodega, informativo |
-| Neutro | `#334155` · `#F1F5F9` | Sin asignar, inactivo |
+| `--surface-lowest` / `--surface-low` / `--surface-container` / `--surface-high` / `--surface-highest` | `#FFFFFF` / `#EFF4FF` / `#E5EEFF` / `#DCE9FF` / `#D3E4FE` | Superficies y elevación por capas |
+| `--border` | `#C0C7D4` | Bordes |
+| `--text` / `--text-muted` / `--text-inverse` | `#0B1C30` / `#404752` / `#FFFFFF` | Texto principal / secundario / inverso |
+| `--success-fg` / `--success-bg` | `#15803D` / `#DCFCE7` | Operativo, vigente |
+| `--warning-fg` / `--warning-bg` | `#B45309` / `#FEF3C7` | En mantenimiento, por vencer |
+| `--danger-fg` / `--danger-bg` | `#B91C1C` / `#FEE2E2` | Crítico, vencido, baja, errores |
+| `--info-fg` / `--info-bg` | `#1D4ED8` / `#DBEAFE` | En bodega, informativo |
+| `--neutral-fg` / `--neutral-bg` | `#334155` / `#F1F5F9` | Sin asignar, inactivo |
+| `--radius-control` / `--radius-card` | `6px` / `8px` | Radios |
+| `--shadow-sm` | `0 1px 2px 0 rgb(0 0 0 / 0.05)` | Sombra máxima |
+| `--transition-fast` | `150ms ease` | Transiciones |
 
 Tipografía: Inter. Base 14 px; títulos de página 24/600; secciones 16/600; tabla y etiquetas 13–14.
-Espaciado en múltiplos de 4 (preferir 8/16/24). Radio 6 px (controles) y 8 px (tarjetas). Tarjetas planas: borde 1 px, sombra como máximo `sm`.
+Espaciado en múltiplos de 4 (preferir 8/16/24). Tarjetas planas: borde 1 px, sombra como máximo `sm`.
 Los colores semánticos solo para estados, nunca decorativos. Un solo color de acento (`--primary`).
 
 ## Estructura de pantalla
-- `AppShell`: sidebar (navy) + topbar + contenido con ancho máximo. Menú según rol del usuario (la UI oculta; el backend decide).
+- `AppShell`: sidebar + topbar + contenido con ancho máximo. Menú según rol del usuario (la UI oculta; el backend decide).
 - `PageHeader`: migas de pan, título, subtítulo, acciones a la derecha (acción principal = botón primary).
 
 | Tipo de página | Orden fijo |
@@ -41,7 +48,7 @@ Los colores semánticos solo para estados, nunca decorativos. Un solo color de a
 | **Formulario** | PageHeader → `FormSection` (tarjetas con título + descripción) → barra de acciones al pie |
 | **Detalle** | PageHeader con `StatusBadge` → pestañas (Resumen, Historial, Mantenimientos, Documentos…) |
 | **Dashboard** | Fila de `KpiCard` → gráficas (Recharts) en tarjetas con título |
-| **Wizard** | Solo el registro de activo (stepper de 4 pasos como en fig. 12) |
+| **Wizard** | Solo el registro de activo (stepper de 4 pasos, ref. fig. 12) |
 
 ## Componentes compartidos (obligatorio reutilizar; viven en `src/components/{ui,shared}`)
 `PageHeader · DataTable · FilterBar · FormSection · FormField · StatusBadge · KpiCard · ConfirmDialog · EmptyState · ErrorState · LoadingSkeleton · Toast`.

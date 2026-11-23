@@ -5,6 +5,8 @@ import { AppShell } from '../components/shared/AppShell';
 import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
 import { ComingSoonPage } from '../pages/ComingSoonPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
+import { UsuariosListPage } from '../features/usuarios/pages/UsuariosListPage';
+import { UsuarioFormPage } from '../features/usuarios/pages/UsuarioFormPage';
 
 export function Router() {
   return (
@@ -17,7 +19,11 @@ export function Router() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/activos" element={<ComingSoonPage title="Activos tecnológicos" />} />
             <Route path="/mantenimientos" element={<ComingSoonPage title="Mantenimientos" />} />
-            <Route path="/usuarios" element={<ComingSoonPage title="Gestión de usuarios" />} />
+            <Route element={<ProtectedRoute roles={['ADMINISTRADOR']} />}>
+              <Route path="/usuarios" element={<UsuariosListPage />} />
+              <Route path="/usuarios/nuevo" element={<UsuarioFormPage />} />
+              <Route path="/usuarios/:id/editar" element={<UsuarioFormPage />} />
+            </Route>
             <Route path="/licencias" element={<ComingSoonPage title="Licencias y garantías" />} />
             <Route path="/reportes" element={<ComingSoonPage title="Reportes" />} />
             <Route path="/configuracion" element={<ComingSoonPage title="Configuración" />} />

@@ -8,4 +8,9 @@ export interface User {
   mfa_activo: boolean;
 }
 
-export type AuthStep = 'credentials' | 'mfa_verify' | 'mfa_setup' | 'recovery_codes';
+export type AuthStep =
+  | 'credentials'
+  | 'password_change'
+  | 'mfa_verify'
+  | 'mfa_setup'
+  | 'recovery_codes';

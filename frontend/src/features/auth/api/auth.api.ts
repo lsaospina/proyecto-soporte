@@ -5,10 +5,17 @@ interface LoginRequest {
   password: string;
 }
 
+export type AuthFlowStatus =
+  | 'ok'
+  | 'mfa_required'
+  | 'mfa_setup_required'
+  | 'password_change_required';
+
 interface LoginResponse {
-  status: 'ok' | 'mfa_required' | 'mfa_setup_required';
-  access?: string;
-  mfa_token?: string;
+  status: AuthFlowStatus;
+  access?: string | null;
+  mfa_token?: string | null;
+  password_token?: string | null;
 }
 
 interface MFASetupResponse {
@@ -27,6 +34,14 @@ interface MFAVerifyResponse {
   access: string;
 }
 
+interface PasswordChangeRequest {
+  password_token: string;
+  new_password: string;
+  confirm_password: string;
+}
+
+type PasswordChangeResponse = LoginResponse;
+
 interface UserMe {
   id: number;
   email: string;
@@ -40,17 +55,36 @@ export async function login(data: LoginRequest): Promise<LoginResponse> {
   return response.data;
 }
 
+export async function changePassword(
+  data: PasswordChangeRequest,
+): Promise<PasswordChangeResponse> {
+  const response = await client.post<PasswordChangeResponse>(
+    '/api/v1/auth/password/change/',
+    data,
+  );
+  return response.data;
+}
+
 export async function mfaSetup(mfaToken: string): Promise<MFASetupResponse> {
-  const response = await client.post<MFASetupResponse>('/api/v1/auth/mfa/setup/', { mfa_token: mfaToken });
+  const response = await client.post<MFASetupResponse>('/api/v1/auth/mfa/setup/', {
+    mfa_token: mfaToken,
+  });
   return response.data;
 }
 
 export async function mfaConfirm(mfaToken: string, code: string): Promise<MFAConfirmResponse> {
-  const response = await client.post<MFAConfirmResponse>('/api/v1/auth/mfa/confirm/', { mfa_token: mfaToken, code });
+  const response = await client.post<MFAConfirmResponse>('/api/v1/auth/mfa/confirm/', {
+    mfa_token: mfaToken,
+    code,
+  });
   return response.data;
 }
 
-export async function mfaVerify(mfaToken: string, code?: string, recoveryCode?: string): Promise<MFAVerifyResponse> {
+export async function mfaVerify(
+  mfaToken: string,
+  code?: string,
+  recoveryCode?: string,
+): Promise<MFAVerifyResponse> {
   const response = await client.post<MFAVerifyResponse>('/api/v1/auth/mfa/verify/', {
     mfa_token: mfaToken,
     code: code || '',
@@ -73,4 +107,13 @@ export async function getMe(): Promise<UserMe> {
   return response.data;
 }
 
-export type { LoginRequest, LoginResponse, MFASetupResponse, MFAConfirmResponse, MFAVerifyResponse, UserMe };
+export type {
+  LoginRequest,
+  LoginResponse,
+  MFASetupResponse,
+  MFAConfirmResponse,
+  MFAVerifyResponse,
+  PasswordChangeRequest,
+  PasswordChangeResponse,
+  UserMe,
+};

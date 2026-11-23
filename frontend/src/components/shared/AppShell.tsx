@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import {
@@ -28,14 +28,14 @@ const navItems: NavItem[] = [
   { label: 'Activos', to: '/activos', icon: <Monitor size={20} />, roles: ['ADMINISTRADOR', 'TECNICO', 'USUARIO_RESPONSABLE'] },
   { label: 'Mantenimientos', to: '/mantenimientos', icon: <Wrench size={20} />, roles: ['ADMINISTRADOR', 'TECNICO'] },
   { label: 'Usuarios', to: '/usuarios', icon: <Users size={20} />, roles: ['ADMINISTRADOR'] },
-  { label: 'Licencias y garantías', to: '/licencias', icon: <FileKey size={20} />, roles: ['ADMINISTRADOR'] },
+  { label: 'Licencias y garantÃ­as', to: '/licencias', icon: <FileKey size={20} />, roles: ['ADMINISTRADOR'] },
   { label: 'Reportes', to: '/reportes', icon: <BarChart3 size={20} />, roles: ['ADMINISTRADOR'] },
-  { label: 'Configuración', to: '/configuracion', icon: <Settings size={20} />, roles: ['ADMINISTRADOR'] },
+  { label: 'ConfiguraciÃ³n', to: '/configuracion', icon: <Settings size={20} />, roles: ['ADMINISTRADOR'] },
 ];
 
 const roleLabels: Record<UserRole, string> = {
   ADMINISTRADOR: 'Administrador',
-  TECNICO: 'Técnico',
+  TECNICO: 'TÃ©cnico',
   USUARIO_RESPONSABLE: 'Usuario Responsable',
 };
 
@@ -91,13 +91,13 @@ export function AppShell() {
                 ITAM
               </div>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                Gestión de activos
+                GestiÃ³n de activos
               </div>
             </div>
           )}
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            aria-label={sidebarCollapsed ? 'Expandir menú' : 'Colapsar menú'}
+            aria-label={sidebarCollapsed ? 'Expandir menÃº' : 'Colapsar menÃº'}
             style={{
               background: 'none',
               border: 'none',
@@ -179,10 +179,10 @@ export function AppShell() {
               fontSize: '13px',
               justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
             }}
-            title="Cerrar sesión"
+            title="Cerrar sesiÃ³n"
           >
             <LogOut size={18} />
-            {!sidebarCollapsed && <span>Cerrar sesión</span>}
+            {!sidebarCollapsed && <span>Cerrar sesiÃ³n</span>}
           </button>
         </div>
       </aside>
@@ -215,7 +215,7 @@ export function AppShell() {
         <header
           style={{
             height: '64px',
-            backgroundColor: 'var(--surface)',
+            backgroundColor: 'var(--surface-lowest)',
             borderBottom: '1px solid var(--border)',
             display: 'flex',
             alignItems: 'center',
@@ -228,7 +228,7 @@ export function AppShell() {
         >
           <button
             onClick={() => setMobileMenuOpen(true)}
-            aria-label="Abrir menú"
+            aria-label="Abrir menÃº"
             style={{
               background: 'none',
               border: 'none',
