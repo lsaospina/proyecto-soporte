@@ -78,6 +78,30 @@ const server = setupServer(
     }),
   ),
   http.get(/\/api\/v1\/mantenimientos\/tecnicos\/$/, () => HttpResponse.json([])),
+  http.get(/\/api\/v1\/dashboard\/resumen\/$/, () =>
+    HttpResponse.json({
+      hoy: '2026-11-15',
+      anio: 2026,
+      activos: {
+        total: 1,
+        operativos: 1,
+        en_mantenimiento: 0,
+        dados_de_baja: 0,
+        inactivos: 0,
+        valor_total: null,
+        por_estado: [
+          { estado: 'DISPONIBLE', etiqueta: 'Disponible', total: 1 },
+          { estado: 'ASIGNADO', etiqueta: 'Asignado', total: 0 },
+          { estado: 'EN_MANTENIMIENTO', etiqueta: 'En mantenimiento', total: 0 },
+          { estado: 'DADO_DE_BAJA', etiqueta: 'Dado de baja', total: 0 },
+        ],
+        por_categoria: [],
+        por_marca: [],
+        ultimas_adquisiciones: [],
+      },
+      mantenimientos: null,
+    }),
+  ),
 );
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
@@ -132,7 +156,7 @@ describe('App smoke /activos', () => {
     window.history.pushState({}, '', '/mantenimientos');
     render(<App />);
     expect(
-      await screen.findByRole('heading', { name: /Centro de Comando/ }),
+      await screen.findByRole('heading', { name: 'Dashboard' }),
     ).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Mantenimientos' })).not.toBeInTheDocument();
   });
