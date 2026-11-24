@@ -25,7 +25,7 @@ export function ActivosListPage() {
   const [serverError, setServerError] = useState('');
 
   const params = paramsFor(estado, search);
-  const { data } = useQuery({ queryKey: ['activos', params], queryFn: () => activosApi.list(params) });
+  const { data, isError } = useQuery({ queryKey: ['activos', params], queryFn: () => activosApi.list(params) });
 
   const toggle = useMutation({
     mutationFn: ({ id, activar }: { id: number; activar: boolean }) =>
@@ -110,7 +110,11 @@ export function ActivosListPage() {
 
       {serverError && <div style={{ color: 'var(--danger-fg)', marginBottom: 8 }}>{serverError}</div>}
 
-      <DataTable columns={columns} data={rows} rowKey={(r: any) => r.id} />
+      {isError ? (
+        <div role="alert" style={{ color: 'var(--danger-fg)' }}>No se pudieron cargar los activos.</div>
+      ) : (
+        <DataTable columns={columns} data={rows} rowKey={(r: any) => r.id} />
+      )}
     </div>
   );
 }

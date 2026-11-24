@@ -36,6 +36,7 @@
 - [ ] ¿Quién recibe las alertas (solo Admin/Técnico según RF015)?
 
 ## Ideas y deuda (fuera de alcance actual)
+- T-004 Fase D: pruebas cerradas (schemas, lista MSW, formulario, rol, smoke de /activos).
 - `resetear_mfa` (comando de gestión) como vía de emergencia si el único admin pierde su dispositivo (sin guarda de auto-reset; usar con control operativo).
 - Revocación inmediata de access tokens tras reset/cambio de contraseña/MFA (p. ej. token version o `password_changed_at`); hoy el refresh se revoca pero el access puede vivir hasta expirar (≤15 min), salvo inactivación que se rechaza de inmediato.
 - Retención/depuración y política de consulta de la tabla `RegistroAuditoria` (crecimiento, archivado, índices/particionado según volumen); UI de consulta de auditoría fuera de alcance.

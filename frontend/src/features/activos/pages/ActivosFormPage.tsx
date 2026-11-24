@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PageHeader } from '../../../components/shared/PageHeader';
@@ -11,25 +12,63 @@ import { useOpcionesCatalogo } from '../../catalogos/hooks/useOpcionesCatalogo';
 
 export function ActivosFormPage() {
   const navigate = useNavigate();
-  const { register, handleSubmit } = useForm<ActivoFormData>({ resolver: zodResolver(activoSchema) });
+  const { id } = useParams();
+  const activoId = id ? Number(id) : null;
+  const esEdicion = activoId !== null;
+  const { register, handleSubmit, reset, setError, formState: { errors } } = useForm<ActivoFormData>({
+    resolver: zodResolver(activoSchema),
+  });
   const marcas = useOpcionesCatalogo('marcas');
   const modelos = useOpcionesCatalogo('modelos', null);
+  const { data: activo } = useQuery({
+    queryKey: ['activos', activoId],
+    queryFn: () => activosApi.retrieve(activoId as number),
+    enabled: esEdicion,
+  });
   const [marcaSeleccionada, setMarcaSeleccionada] = useState<number | ''>('');
   const [serverError, setServerError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (!activo) return;
+    reset({
+      serial: activo.serial,
+      modelo: activo.modelo,
+      fecha_adquisicion: activo.fecha_adquisicion,
+      valor_adquisicion: activo.valor_adquisicion ?? '',
+      procesador: activo.procesador ?? '',
+      ram_gb: activo.ram_gb ?? undefined,
+      almacenamiento_gb: activo.almacenamiento_gb ?? undefined,
+      direccion_mac: activo.direccion_mac ?? '',
+      observaciones: activo.observaciones ?? '',
+    });
+  }, [activo, modelos.data, reset]);
+
+  const modeloDelActivo = activo ? (modelos.data ?? []).find((m: any) => m.id === activo.modelo) : undefined;
+  const marcaEfectiva = marcaSeleccionada !== '' ? marcaSeleccionada : (modeloDelActivo?.marca ?? '');
+
   const modelosFiltrados = (modelos.data ?? []).filter(
-    (m: any) => !marcaSeleccionada || m.marca === marcaSeleccionada,
+    (m: any) => !marcaEfectiva || m.marca === marcaEfectiva,
   );
 
   const onSubmit = async (data: ActivoFormData) => {
     setServerError('');
     setIsSubmitting(true);
     try {
-      await activosApi.create(data);
+      if (esEdicion) {
+        await activosApi.update(activoId as number, data);
+      } else {
+        await activosApi.create(data);
+      }
       navigate('/activos');
     } catch (e: any) {
-      setServerError(e?.response?.data?.detail || 'No se pudo registrar el activo.');
+      const body = e?.response?.data;
+      const serialError = Array.isArray(body?.serial) ? body.serial[0] : body?.serial;
+      if (serialError) {
+        setError('serial', { type: 'server', message: String(serialError) });
+        return;
+      }
+      setServerError(body?.detail || 'No se pudo registrar el activo.');
     } finally {
       setIsSubmitting(false);
     }
@@ -37,10 +76,10 @@ export function ActivosFormPage() {
 
   return (
     <div>
-      <PageHeader title="Registrar activo" subtitle="Nuevo activo tecnológico" />
+      <PageHeader title={esEdicion ? 'Editar activo' : 'Registrar activo'} subtitle="Activo tecnológico" />
       <form onSubmit={handleSubmit(onSubmit)}>
         <FormSection title="Identificación">
-          <FormField label="Serial" htmlFor="serial" required>
+          <FormField label="Serial" htmlFor="serial" required error={errors.serial?.message}>
             <input
               id="serial"
               {...register('serial')}
@@ -50,7 +89,7 @@ export function ActivosFormPage() {
           <FormField label="Marca" htmlFor="marca" required>
             <select
               id="marca"
-              value={marcaSeleccionada}
+              value={marcaEfectiva}
               onChange={(e) => setMarcaSeleccionada(e.target.value ? Number(e.target.value) : '')}
               style={{ width: '100%', padding: 8, border: '1px solid var(--border)', borderRadius: 6 }}
             >
