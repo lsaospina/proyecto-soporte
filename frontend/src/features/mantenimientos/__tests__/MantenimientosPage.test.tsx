@@ -55,6 +55,15 @@ const reprogramado = baseMantenimiento(4, {
   fecha_programada: '2026-12-10',
   reprogramacion_de: 3,
 });
+const correctivo = baseMantenimiento(10, {
+  tipo: 'CORRECTIVO',
+  estado: 'COMPLETADO',
+  situacion: 'COMPLETADO',
+  observacion: 'No enciende; se cambió la fuente.',
+  fecha_programada: '2026-11-10',
+  fecha_realizacion: '2026-11-10',
+  fecha_seguimiento: '2026-12-01',
+});
 
 const resumen = {
   anio: 2026,
@@ -72,8 +81,10 @@ const resumen = {
 let calendarioMantenimientos = [pendiente, vencido, incumplido];
 let reprogramarStatus = 201;
 let programadoBody: any = null;
+let correctivoBody: any = null;
 let canceladoBody: any = null;
 const listParams: URLSearchParams[] = [];
+const activosParams: URLSearchParams[] = [];
 
 const server = setupServer(
   http.get(/\/api\/v1\/mantenimientos\/resumen\/$/, () => HttpResponse.json(resumen)),
@@ -89,13 +100,15 @@ const server = setupServer(
     HttpResponse.json([{ id: 7, nombre_completo: 'Técnico Siete' }]),
   ),
   http.get(/\/api\/v1\/mantenimientos\/$/, ({ request }) => {
-    listParams.push(new URL(request.url).searchParams);
+    const params = new URL(request.url).searchParams;
+    listParams.push(params);
+    const esCorrectivo = params.get('tipo') === 'CORRECTIVO';
     return HttpResponse.json({
       count: 1,
       next: null,
       previous: null,
       hoy,
-      results: [pendiente],
+      results: esCorrectivo ? [correctivo] : [pendiente],
     });
   }),
   http.get(/\/api\/v1\/mantenimientos\/(\d+)\/historial\/$/, () => HttpResponse.json([])),
@@ -108,6 +121,10 @@ const server = setupServer(
     programadoBody = await request.json();
     return HttpResponse.json(baseMantenimiento(9), { status: 201 });
   }),
+  http.post(/\/api\/v1\/mantenimientos\/correctivos\/$/, async ({ request }) => {
+    correctivoBody = await request.json();
+    return HttpResponse.json(correctivo, { status: 201 });
+  }),
   http.post(/\/api\/v1\/mantenimientos\/(\d+)\/completar\/$/, () =>
     HttpResponse.json(baseMantenimiento(1, { situacion: 'COMPLETADO' })),
   ),
@@ -118,14 +135,15 @@ const server = setupServer(
     canceladoBody = await request.json();
     return HttpResponse.json(baseMantenimiento(2, { situacion: 'CANCELADO' }));
   }),
-  http.get(/\/api\/v1\/activos\/$/, () =>
-    HttpResponse.json({
+  http.get(/\/api\/v1\/activos\/$/, ({ request }) => {
+    activosParams.push(new URL(request.url).searchParams);
+    return HttpResponse.json({
       count: 1,
       next: null,
       previous: null,
       results: [{ id: 9, serial: 'SN9', codigo_qr: 'AST-2026-000009' }],
-    }),
-  ),
+    });
+  }),
 );
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
@@ -134,8 +152,10 @@ afterEach(() => {
   calendarioMantenimientos = [pendiente, vencido, incumplido];
   reprogramarStatus = 201;
   programadoBody = null;
+  correctivoBody = null;
   canceladoBody = null;
   listParams.length = 0;
+  activosParams.length = 0;
   authState.rol = 'ADMINISTRADOR';
 });
 afterAll(() => server.close());
@@ -200,8 +220,11 @@ describe('MantenimientosPage', () => {
     renderPage();
     await user.click(await screen.findByRole('button', { name: 'Programar 2026-11-16' }));
     const dialog = await screen.findByRole('dialog');
-    await user.type(within(dialog).getByPlaceholderText(/Escriba al menos 2/), 'SN');
-    await user.selectOptions(within(dialog).getByLabelText(/^Equipo/), '9');
+    await within(dialog).findByRole('option', { name: /AST-2026-000009/ });
+    await user.selectOptions(within(dialog).getByLabelText(/^Equipo\*/), '9');
+    const paramsActivos = activosParams[activosParams.length - 1];
+    expect(paramsActivos?.get('is_active')).toBe('true');
+    expect(paramsActivos?.get('estado_no')).toBe('DADO_DE_BAJA');
     await user.click(within(dialog).getByRole('button', { name: 'Programar' }));
     expect(await screen.findByRole('status')).toHaveTextContent('Mantenimiento programado.');
     expect(programadoBody?.activo).toBe(9);
@@ -279,7 +302,51 @@ describe('MantenimientosPage', () => {
     await user.click(await screen.findByRole('tab', { name: 'Lista' }));
     await user.type(screen.getByPlaceholderText(/Buscar serial/), 'SN1');
     await waitFor(() => expect(listParams[listParams.length - 1]?.get('search')).toBe('SN1'));
+    expect(listParams[listParams.length - 1]?.get('tipo')).toBe('PREVENTIVO');
     await user.selectOptions(screen.getByLabelText('Filtrar por situación'), 'VENCIDO');
     await waitFor(() => expect(listParams[listParams.length - 1]?.get('situacion')).toBe('VENCIDO'));
+  });
+
+  it('la pestaña Correctivos lista los registros correctivos', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole('tab', { name: 'Correctivos' }));
+    expect(await screen.findByText('No enciende; se cambió la fuente.')).toBeInTheDocument();
+    expect(listParams[listParams.length - 1]?.get('tipo')).toBe('CORRECTIVO');
+  });
+
+  it('registra un correctivo con equipo, descripción y seguimiento', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole('tab', { name: 'Correctivos' }));
+    await user.click(await screen.findByRole('button', { name: 'Registrar correctivo' }));
+    const dialog = await screen.findByRole('dialog');
+    await within(dialog).findByRole('option', { name: /AST-2026-000009/ });
+    await user.selectOptions(within(dialog).getByLabelText(/^Equipo\*/), '9');
+    const paramsActivos = activosParams[activosParams.length - 1];
+    expect(paramsActivos?.get('is_active')).toBe('true');
+    expect(paramsActivos?.get('estado_no')).toBe('DADO_DE_BAJA');
+    await user.type(within(dialog).getByLabelText(/¿Qué pasó/), 'No enciende');
+    fireEvent.change(within(dialog).getByLabelText(/Fecha de seguimiento/), {
+      target: { value: '2026-12-01' },
+    });
+    await user.click(within(dialog).getByRole('button', { name: 'Registrar' }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Correctivo registrado.');
+    expect(correctivoBody?.activo).toBe(9);
+    expect(correctivoBody?.observacion).toBe('No enciende');
+    expect(correctivoBody?.fecha_seguimiento).toBe('2026-12-01');
+    expect(correctivoBody?.tecnico).toBe(7);
+  });
+
+  it('el correctivo exige equipo y descripción', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole('tab', { name: 'Correctivos' }));
+    await user.click(await screen.findByRole('button', { name: 'Registrar correctivo' }));
+    const dialog = await screen.findByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Registrar' }));
+    expect(await within(dialog).findByText('El equipo es obligatorio')).toBeInTheDocument();
+    expect(within(dialog).getByText('Describa qué pasó')).toBeInTheDocument();
+    expect(correctivoBody).toBeNull();
   });
 });

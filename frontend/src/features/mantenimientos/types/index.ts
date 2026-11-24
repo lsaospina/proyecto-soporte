@@ -16,6 +16,7 @@ export interface Mantenimiento {
   tipo: 'PREVENTIVO' | 'CORRECTIVO';
   fecha_programada: string;
   fecha_realizacion: string | null;
+  fecha_seguimiento: string | null;
   tecnico: number | null;
   tecnico_nombre: string | null;
   costo: string | null;

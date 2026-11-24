@@ -187,3 +187,60 @@ def cancelar_mantenimiento(instancia, motivo, actor, ip=None):
             ip=ip,
         )
     return instancia
+
+
+def registrar_correctivo(datos, actor, ip=None):
+    fecha_evento = datos["fecha_programada"]
+    if fecha_evento > timezone.localdate():
+        raise ReglaDeNegocioError(
+            "La fecha del evento no puede ser futura.",
+            code="fecha_futura",
+            errors=[{"field": "fecha_programada", "message": "La fecha no puede ser futura."}],
+        )
+    fecha_seguimiento = datos["fecha_seguimiento"]
+    if fecha_seguimiento < fecha_evento:
+        raise ReglaDeNegocioError(
+            "La fecha de seguimiento no puede ser anterior a la fecha del evento.",
+            code="fecha_seguimiento_invalida",
+            errors=[
+                {
+                    "field": "fecha_seguimiento",
+                    "message": "La fecha de seguimiento debe ser igual o posterior al evento.",
+                }
+            ],
+        )
+    observacion = (datos.get("observacion") or "").strip()
+    if not observacion:
+        raise ReglaDeNegocioError(
+            "Debe describir qué pasó.",
+            code="descripcion_requerida",
+            errors=[{"field": "observacion", "message": "Describa qué pasó."}],
+        )
+    activo = datos["activo"]
+    if not activo.is_active:
+        raise ReglaDeNegocioError("El activo está inactivo.", code="activo_inactivo")
+    if activo.estado == EstadoActivo.DADO_DE_BAJA:
+        raise ReglaDeNegocioError("El activo está dado de baja.", code="activo_dado_de_baja")
+
+    with transaction.atomic():
+        obj = Mantenimiento.objects.create(
+            activo=activo,
+            tipo=TipoMantenimiento.CORRECTIVO,
+            fecha_programada=fecha_evento,
+            fecha_realizacion=fecha_evento,
+            fecha_seguimiento=fecha_seguimiento,
+            tecnico=datos.get("tecnico"),
+            costo=datos.get("costo"),
+            observacion=observacion,
+            estado=EstadoMantenimiento.COMPLETADO,
+        )
+        obj._history_user = actor
+        obj.save(update_fields=["updated_at"])
+        registrar_evento(
+            usuario=actor,
+            accion="MANTENIMIENTO_CORRECTIVO_REGISTRADO",
+            entidad="Mantenimiento",
+            entidad_id=obj.pk,
+            ip=ip,
+        )
+    return obj

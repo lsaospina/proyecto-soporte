@@ -60,6 +60,7 @@ Antes de crear un componente, revisa si ya existe uno. Si falta uno genérico, c
 - Acciones al pie, alineadas a la derecha: **Cancelar** (secundario) a la izquierda de **Guardar** (primario). Deshabilitar y mostrar progreso mientras envía.
 - Acciones destructivas (inactivar, dar de baja) siempre con `ConfirmDialog`. Éxito → `Toast` + navegar al listado o detalle.
 - Selects con búsqueda para FKs grandes (activos, usuarios). Fechas `dd/MM/yyyy`. Moneda COP con `Intl.NumberFormat("es-CO")`.
+- Los listados/selects de equipos solo muestran `is_active=true` y excluyen `estado=DADO_DE_BAJA` (`?estado_no=DADO_DE_BAJA`).
 
 ## Estados de datos
 Toda vista con datos remotos maneja: carga (`LoadingSkeleton`), vacío (`EmptyState` con acción sugerida), error (`ErrorState` con "Reintentar").

@@ -14,6 +14,7 @@ from apps.mantenimientos.models import (
     EstadoMantenimiento,
     Mantenimiento,
     SituacionMantenimiento,
+    TipoMantenimiento,
 )
 
 CAMPOS_RELACIONADOS = ("activo__modelo__marca", "activo__modelo__categoria", "tecnico")
@@ -41,8 +42,12 @@ def anotar_situacion(qs):
     )
 
 
-def listar_mantenimientos(*, anio=None, mes=None, situacion=None, tecnico=None, search=None):
+def listar_mantenimientos(
+    *, anio=None, mes=None, situacion=None, tecnico=None, tipo=None, search=None
+):
     qs = anotar_situacion(Mantenimiento.objects.select_related(*CAMPOS_RELACIONADOS))
+    if tipo:
+        qs = qs.filter(tipo=tipo)
     if anio:
         qs = qs.filter(fecha_programada__year=anio)
     if mes:
@@ -73,9 +78,9 @@ def resumen_anual(anio):
     hoy = timezone.localdate()
     registros = list(
         anotar_situacion(
-            Mantenimiento.objects.filter(fecha_programada__year=anio).select_related(
-                *CAMPOS_RELACIONADOS
-            )
+            Mantenimiento.objects.filter(
+                fecha_programada__year=anio, tipo=TipoMantenimiento.PREVENTIVO
+            ).select_related(*CAMPOS_RELACIONADOS)
         )
     )
     meses = []
@@ -104,7 +109,9 @@ def calendario_mensual(anio, mes):
     hoy = timezone.localdate()
     qs = anotar_situacion(
         Mantenimiento.objects.filter(
-            fecha_programada__year=anio, fecha_programada__month=mes
+            fecha_programada__year=anio,
+            fecha_programada__month=mes,
+            tipo=TipoMantenimiento.PREVENTIVO,
         ).select_related(*CAMPOS_RELACIONADOS)
     ).order_by("fecha_programada", "id")
     return {"anio": anio, "mes": mes, "hoy": hoy, "mantenimientos": qs}

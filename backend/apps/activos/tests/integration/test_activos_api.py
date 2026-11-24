@@ -328,3 +328,25 @@ class TestActivosInactivosVisible:
         )
         resp = api_client.get("/api/v1/activos/?todos=1")
         assert resp.data["count"] == 2
+
+
+@pytest.mark.django_db
+def test_list_excluye_estado_dado_de_baja(api_client, admin_user, modelo):
+    auth(api_client, admin_user)
+    Activo.objects.create(
+        serial="DISP1",
+        modelo=modelo,
+        fecha_adquisicion="2024-01-01",
+        codigo_qr="AST-2024-000036",
+        estado=EstadoActivo.DISPONIBLE,
+    )
+    Activo.objects.create(
+        serial="BAJA1",
+        modelo=modelo,
+        fecha_adquisicion="2024-01-01",
+        codigo_qr="AST-2024-000037",
+        estado=EstadoActivo.DADO_DE_BAJA,
+    )
+    resp = api_client.get("/api/v1/activos/?estado_no=DADO_DE_BAJA")
+    assert resp.data["count"] == 1
+    assert resp.data["results"][0]["serial"] == "DISP1"

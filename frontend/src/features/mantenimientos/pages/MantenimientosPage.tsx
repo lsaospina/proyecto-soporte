@@ -16,10 +16,12 @@ import { mantenimientosApi } from '../api/mantenimientos.api';
 import {
   cancelarSchema,
   completarSchema,
+  correctivoSchema,
   programarSchema,
   reprogramarSchema,
   type CancelarFormData,
   type CompletarFormData,
+  type CorrectivoFormData,
   type ProgramarFormData,
   type ReprogramarFormData,
 } from '../schemas/mantenimiento.schema';
@@ -55,7 +57,7 @@ interface Tecnico {
   email?: string;
 }
 
-type Dialogo = 'programar' | 'completar' | 'reprogramar' | 'cancelar' | null;
+type Dialogo = 'programar' | 'completar' | 'reprogramar' | 'cancelar' | 'correctivo' | null;
 
 function Chip({ mantenimiento, onClick }: { mantenimiento: Mantenimiento; onClick: () => void }) {
   const variante = VARIANTE[mantenimiento.situacion];
@@ -119,9 +121,14 @@ function ProgramarDialog({
     defaultValues: { activo: 0, fecha_programada: fecha, observacion: '' },
   });
   const activosQ = useQuery({
-    queryKey: ['activos-buscar', busqueda],
-    queryFn: () => activosApi.list({ search: busqueda, page_size: 10 }),
-    enabled: busqueda.trim().length >= 2,
+    queryKey: ['activos-opciones', busqueda],
+    queryFn: () =>
+      activosApi.list({
+        page_size: 100,
+        is_active: true,
+        estado_no: 'DADO_DE_BAJA',
+        ...(busqueda.trim() ? { search: busqueda.trim() } : {}),
+      }),
   });
   const resultados: any[] = activosQ.data?.results ?? [];
 
@@ -145,14 +152,26 @@ function ProgramarDialog({
       onCancel={onClose}
       onConfirm={handleSubmit(enviar)}
     >
-      <FormField label="Buscar equipo (serial, código, marca o modelo)" htmlFor="buscar_activo">
-        <input
-          id="buscar_activo"
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          placeholder="Escriba al menos 2 caracteres"
-          style={{ width: '100%', padding: 8, border: '1px solid var(--border)', borderRadius: 6 }}
-        />
+      <FormField
+        label="Equipos (se muestran todos los activos; filtre si lo necesita)"
+        htmlFor="buscar_activo"
+      >
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            id="buscar_activo"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Filtrar por serial, código, marca o modelo"
+            style={{ flex: 1, padding: 8, border: '1px solid var(--border)', borderRadius: 6 }}
+          />
+          <button
+            type="button"
+            onClick={() => setBusqueda('')}
+            style={{ padding: '8px 12px', border: '1px solid var(--border)', background: 'var(--surface-lowest)', borderRadius: 6, cursor: 'pointer' }}
+          >
+            Ver todos
+          </button>
+        </div>
       </FormField>
       <FormField label="Equipo" htmlFor="activo" required error={errors.activo?.message}>
         <select
@@ -160,10 +179,13 @@ function ProgramarDialog({
           {...register('activo', { valueAsNumber: true })}
           style={{ width: '100%', padding: 8, border: '1px solid var(--border)', borderRadius: 6 }}
         >
-          <option value={0}>-- Selecciona --</option>
+          <option value={0}>
+            {activosQ.isLoading ? 'Cargando equipos…' : '-- Selecciona --'}
+          </option>
           {resultados.map((a) => (
             <option key={a.id} value={a.id}>
               {a.codigo_qr} · {a.serial}
+              {a.marca_nombre ? ` · ${a.marca_nombre} / ${a.modelo_nombre}` : ''}
             </option>
           ))}
         </select>
@@ -182,6 +204,149 @@ function ProgramarDialog({
           {...register('observacion')}
           style={{ width: '100%', padding: 8, border: '1px solid var(--border)', borderRadius: 6 }}
         />
+      </FormField>
+      {serverError && <div role="alert" style={{ color: 'var(--danger-fg)' }}>{serverError}</div>}
+    </ConfirmDialog>
+  );
+}
+
+function CorrectivoDialog({
+  hoy,
+  tecnicos,
+  onClose,
+  onDone,
+}: {
+  hoy: string;
+  tecnicos: Tecnico[];
+  onClose: () => void;
+  onDone: (mensaje: string) => void;
+}) {
+  const { user } = useAuth();
+  const [busqueda, setBusqueda] = useState('');
+  const [serverError, setServerError] = useState('');
+  const { register, handleSubmit, formState: { errors }, setError } = useForm<CorrectivoFormData>({
+    resolver: zodResolver(correctivoSchema),
+    defaultValues: {
+      activo: 0,
+      observacion: '',
+      fecha_programada: hoy,
+      fecha_seguimiento: hoy,
+      tecnico: user?.id ?? 0,
+    },
+  });
+  const activosQ = useQuery({
+    queryKey: ['activos-opciones-correctivo', busqueda],
+    queryFn: () =>
+      activosApi.list({
+        page_size: 100,
+        is_active: true,
+        estado_no: 'DADO_DE_BAJA',
+        ...(busqueda.trim() ? { search: busqueda.trim() } : {}),
+      }),
+  });
+  const resultados: any[] = activosQ.data?.results ?? [];
+
+  const enviar = async (data: CorrectivoFormData) => {
+    setServerError('');
+    try {
+      await mantenimientosApi.crearCorrectivo({
+        activo: data.activo,
+        observacion: data.observacion,
+        fecha_programada: data.fecha_programada,
+        fecha_seguimiento: data.fecha_seguimiento,
+        tecnico: data.tecnico || undefined,
+      });
+      onDone('Correctivo registrado.');
+    } catch (e: any) {
+      if (!mapearErrores(e, setError)) {
+        setServerError(e?.response?.data?.detail || 'No se pudo registrar el correctivo.');
+      }
+    }
+  };
+
+  return (
+    <ConfirmDialog
+      open
+      title="Registrar correctivo"
+      confirmLabel="Registrar"
+      onCancel={onClose}
+      onConfirm={handleSubmit(enviar)}
+    >
+      <FormField
+        label="Equipos (se muestran todos los activos; filtre si lo necesita)"
+        htmlFor="buscar_activo_correctivo"
+      >
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            id="buscar_activo_correctivo"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Filtrar por serial, código, marca o modelo"
+            style={{ flex: 1, padding: 8, border: '1px solid var(--border)', borderRadius: 6 }}
+          />
+          <button
+            type="button"
+            onClick={() => setBusqueda('')}
+            style={{ padding: '8px 12px', border: '1px solid var(--border)', background: 'var(--surface-lowest)', borderRadius: 6, cursor: 'pointer' }}
+          >
+            Ver todos
+          </button>
+        </div>
+      </FormField>
+      <FormField label="Equipo" htmlFor="activo_correctivo" required error={errors.activo?.message}>
+        <select
+          id="activo_correctivo"
+          {...register('activo', { valueAsNumber: true })}
+          style={{ width: '100%', padding: 8, border: '1px solid var(--border)', borderRadius: 6 }}
+        >
+          <option value={0}>
+            {activosQ.isLoading ? 'Cargando equipos…' : '-- Selecciona --'}
+          </option>
+          {resultados.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.codigo_qr} · {a.serial}
+              {a.marca_nombre ? ` · ${a.marca_nombre} / ${a.modelo_nombre}` : ''}
+            </option>
+          ))}
+        </select>
+      </FormField>
+      <FormField label="¿Qué pasó?" htmlFor="descripcion_correctivo" required error={errors.observacion?.message}>
+        <textarea
+          id="descripcion_correctivo"
+          {...register('observacion')}
+          style={{ width: '100%', padding: 8, border: '1px solid var(--border)', borderRadius: 6 }}
+        />
+      </FormField>
+      <FormField label="Fecha del evento" htmlFor="fecha_evento" required error={errors.fecha_programada?.message}>
+        <input
+          id="fecha_evento"
+          type="date"
+          max={hoy}
+          {...register('fecha_programada')}
+          style={{ width: '100%', padding: 8, border: '1px solid var(--border)', borderRadius: 6 }}
+        />
+      </FormField>
+      <FormField label="Fecha de seguimiento" htmlFor="fecha_seguimiento" required error={errors.fecha_seguimiento?.message}>
+        <input
+          id="fecha_seguimiento"
+          type="date"
+          {...register('fecha_seguimiento')}
+          style={{ width: '100%', padding: 8, border: '1px solid var(--border)', borderRadius: 6 }}
+        />
+      </FormField>
+      <FormField label="Técnico" htmlFor="tecnico_correctivo">
+        <select
+          id="tecnico_correctivo"
+          {...register('tecnico', { valueAsNumber: true })}
+          style={{ width: '100%', padding: 8, border: '1px solid var(--border)', borderRadius: 6 }}
+        >
+          <option value={0}>-- Sin asignar --</option>
+          {tecnicos.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.nombre_completo}
+            </option>
+          ))}
+        </select>
       </FormField>
       {serverError && <div role="alert" style={{ color: 'var(--danger-fg)' }}>{serverError}</div>}
     </ConfirmDialog>
@@ -393,7 +558,7 @@ export function MantenimientosPage() {
   const esAdmin = user?.rol === 'ADMINISTRADOR';
   const qc = useQueryClient();
 
-  const [tab, setTab] = useState<'calendario' | 'lista'>('calendario');
+  const [tab, setTab] = useState<'calendario' | 'lista' | 'correctivos'>('calendario');
   const [anio, setAnio] = useState<number | undefined>(undefined);
   const [mes, setMes] = useState<number | undefined>(undefined);
   const [seleccionado, setSeleccionado] = useState<number | null>(null);
@@ -408,6 +573,8 @@ export function MantenimientosPage() {
   const [fTecnico, setFTecnico] = useState('');
   const [busqueda, setBusqueda] = useState('');
   const [page, setPage] = useState(1);
+  const [cBusqueda, setCBusqueda] = useState('');
+  const [cPage, setCPage] = useState(1);
 
   const resumenQ = useQuery<ResumenAnual>({
     queryKey: ['mant-resumen', anio],
@@ -441,7 +608,7 @@ export function MantenimientosPage() {
   });
 
   const params = useMemo(() => {
-    const p: Record<string, unknown> = { page, page_size: 20 };
+    const p: Record<string, unknown> = { page, page_size: 20, tipo: 'PREVENTIVO' };
     const anioLista = fAnio === '' ? anioEfectivo : fAnio;
     if (anioLista) p.anio = anioLista;
     if (fMes !== '') p.mes = fMes;
@@ -457,10 +624,23 @@ export function MantenimientosPage() {
     enabled: tab === 'lista' && anioEfectivo !== undefined,
   });
 
+  const correctivosQ = useQuery<Paginated<Mantenimiento>>({
+    queryKey: ['mant-correctivos', cBusqueda, cPage],
+    queryFn: () =>
+      mantenimientosApi.list({
+        tipo: 'CORRECTIVO',
+        page: cPage,
+        page_size: 20,
+        ...(cBusqueda.trim() ? { search: cBusqueda.trim() } : {}),
+      }),
+    enabled: tab === 'correctivos',
+  });
+
   const invalidar = () => {
     qc.invalidateQueries({ queryKey: ['mant-resumen'] });
     qc.invalidateQueries({ queryKey: ['mant-calendario'] });
     qc.invalidateQueries({ queryKey: ['mant-lista'] });
+    qc.invalidateQueries({ queryKey: ['mant-correctivos'] });
     qc.invalidateQueries({ queryKey: ['mant'] });
     qc.invalidateQueries({ queryKey: ['mant-hist'] });
   };
@@ -515,6 +695,14 @@ export function MantenimientosPage() {
     },
   ];
 
+  const columnasCorrectivos: DataTableColumn<Mantenimiento>[] = [
+    { key: 'fecha', header: 'Fecha del evento', render: (m) => formatFecha(m.fecha_programada) },
+    { key: 'equipo', header: 'Equipo', render: (m) => `${m.activo_codigo} · ${m.activo_serial}` },
+    { key: 'que_paso', header: '¿Qué pasó?', render: (m) => m.observacion },
+    { key: 'seguimiento', header: 'Seguimiento', render: (m) => formatFecha(m.fecha_seguimiento) },
+    { key: 'tecnico', header: 'Técnico', render: (m) => m.tecnico_nombre ?? '—' },
+  ];
+
   return (
     <div>
       <PageHeader title="Mantenimientos" subtitle="Calendario preventivo anual y seguimiento" />
@@ -561,6 +749,15 @@ export function MantenimientosPage() {
             style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid var(--border)', background: tab === 'lista' ? 'var(--primary-light)' : 'var(--surface-lowest)', cursor: 'pointer' }}
           >
             Lista
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'correctivos'}
+            onClick={() => setTab('correctivos')}
+            style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid var(--border)', background: tab === 'correctivos' ? 'var(--primary-light)' : 'var(--surface-lowest)', cursor: 'pointer' }}
+          >
+            Correctivos
           </button>
         </div>
       </div>
@@ -787,6 +984,56 @@ export function MantenimientosPage() {
         </div>
       )}
 
+      {tab === 'correctivos' && (
+        <div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+            <input
+              value={cBusqueda}
+              onChange={(e) => {
+                setCBusqueda(e.target.value);
+                setCPage(1);
+              }}
+              placeholder="Buscar serial, código, marca o modelo"
+              style={{ padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 6, minWidth: 240 }}
+            />
+            <button
+              type="button"
+              onClick={() => setDialogo('correctivo')}
+              style={{ marginLeft: 'auto', padding: '8px 14px', borderRadius: 6, border: 'none', background: 'var(--primary)', color: '#fff', cursor: 'pointer' }}
+            >
+              Registrar correctivo
+            </button>
+          </div>
+
+          {correctivosQ.isError ? (
+            <div role="alert" style={{ color: 'var(--danger-fg)' }}>
+              No se pudieron cargar los correctivos.
+            </div>
+          ) : (
+            <DataTable
+              columns={columnasCorrectivos}
+              data={correctivosQ.data?.results ?? []}
+              rowKey={(m) => m.id}
+              emptyState={<p style={{ fontSize: 13, color: 'var(--text-muted)' }}>No hay correctivos registrados.</p>}
+            />
+          )}
+
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 12 }}>
+            <button type="button" disabled={cPage <= 1} onClick={() => setCPage((p) => p - 1)}>
+              Anterior
+            </button>
+            <span style={{ fontSize: 13 }}>Página {cPage}</span>
+            <button
+              type="button"
+              disabled={!correctivosQ.data?.next}
+              onClick={() => setCPage((p) => p + 1)}
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+      )}
+
       {detalle && (
         <section style={{ marginTop: 20, padding: 16, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface-lowest)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -868,6 +1115,14 @@ export function MantenimientosPage() {
 
       {dialogo === 'programar' && (
         <ProgramarDialog fecha={fechaDialogo} onClose={cerrarDialogo} onDone={terminar} />
+      )}
+      {dialogo === 'correctivo' && (
+        <CorrectivoDialog
+          hoy={hoy}
+          tecnicos={tecnicos}
+          onClose={cerrarDialogo}
+          onDone={terminar}
+        />
       )}
       {dialogo === 'completar' && detalle && (
         <CompletarDialog

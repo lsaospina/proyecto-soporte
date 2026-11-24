@@ -34,6 +34,7 @@ class Mantenimiento(BaseModel):
     )
     fecha_programada = models.DateField()
     fecha_realizacion = models.DateField(null=True, blank=True)
+    fecha_seguimiento = models.DateField(null=True, blank=True)
     tecnico = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,

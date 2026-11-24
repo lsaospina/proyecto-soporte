@@ -90,6 +90,7 @@ describe('ActivosListPage', () => {
     await user.type(screen.getByPlaceholderText(/Buscar serial/), 'SN1');
     await waitFor(() => expect(requests[requests.length - 1]?.get('search')).toBe('SN1'));
     expect(requests[requests.length - 1]?.get('is_active')).toBe('true');
+    expect(requests[requests.length - 1]?.get('estado_no')).toBe('DADO_DE_BAJA');
 
     await user.click(screen.getByRole('button', { name: 'inactivos' }));
     await waitFor(() => expect(requests[requests.length - 1]?.get('is_active')).toBe('false'));

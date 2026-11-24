@@ -20,6 +20,7 @@ from apps.mantenimientos.selectors import (
 from apps.mantenimientos.serializers import (
     CancelarMantenimientoSerializer,
     CompletarMantenimientoSerializer,
+    CorrectivoCreateSerializer,
     MantenimientoCreateSerializer,
     MantenimientoSerializer,
     ReprogramarMantenimientoSerializer,
@@ -28,6 +29,7 @@ from apps.mantenimientos.services import (
     cancelar_mantenimiento,
     completar_mantenimiento,
     programar_mantenimiento,
+    registrar_correctivo,
     reprogramar_mantenimiento,
 )
 from apps.usuarios.models import Usuario
@@ -84,6 +86,15 @@ class MantenimientoViewSet(viewsets.ModelViewSet):
         from apps.auditoria.utils import get_client_ip
 
         return get_client_ip(self.request)
+
+    @extend_schema(request=CorrectivoCreateSerializer, responses={201: MantenimientoSerializer})
+    @action(detail=False, methods=["post"])
+    def correctivos(self, request):
+        serializer = CorrectivoCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        obj = registrar_correctivo(serializer.validated_data, request.user, ip=self._ip())
+        out = MantenimientoSerializer(obtener_mantenimiento(obj.pk))
+        return Response(out.data, status=status.HTTP_201_CREATED)
 
     @extend_schema(responses={200: MantenimientoSerializer})
     @action(detail=True, methods=["post"])

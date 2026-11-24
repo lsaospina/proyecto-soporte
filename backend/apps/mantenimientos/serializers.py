@@ -36,6 +36,7 @@ class MantenimientoSerializer(serializers.ModelSerializer):
             "tipo",
             "fecha_programada",
             "fecha_realizacion",
+            "fecha_seguimiento",
             "tecnico",
             "tecnico_nombre",
             "costo",
@@ -74,6 +75,19 @@ class MantenimientoCreateSerializer(serializers.Serializer):
         queryset=Usuario.objects.filter(is_active=True), required=False, allow_null=True
     )
     observacion = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class CorrectivoCreateSerializer(serializers.Serializer):
+    activo = serializers.PrimaryKeyRelatedField(queryset=Activo.objects.all())
+    fecha_programada = serializers.DateField()
+    fecha_seguimiento = serializers.DateField()
+    observacion = serializers.CharField()
+    tecnico = serializers.PrimaryKeyRelatedField(
+        queryset=Usuario.objects.filter(is_active=True), required=False, allow_null=True
+    )
+    costo = serializers.DecimalField(
+        max_digits=12, decimal_places=2, min_value=Decimal("0"), required=False, allow_null=True
+    )
 
 
 class CompletarMantenimientoSerializer(serializers.Serializer):

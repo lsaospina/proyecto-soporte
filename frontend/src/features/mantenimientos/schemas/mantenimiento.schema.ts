@@ -29,3 +29,17 @@ export const cancelarSchema = z.object({
   motivo: z.string().trim().min(1, 'El motivo es obligatorio'),
 });
 export type CancelarFormData = z.infer<typeof cancelarSchema>;
+
+export const correctivoSchema = z
+  .object({
+    activo: z.number().min(1, 'El equipo es obligatorio'),
+    observacion: z.string().trim().min(1, 'Describa qué pasó'),
+    fecha_programada: fecha,
+    fecha_seguimiento: fecha,
+    tecnico: z.number().optional(),
+  })
+  .refine((v) => v.fecha_seguimiento >= v.fecha_programada, {
+    path: ['fecha_seguimiento'],
+    message: 'La fecha de seguimiento debe ser igual o posterior al evento.',
+  });
+export type CorrectivoFormData = z.infer<typeof correctivoSchema>;

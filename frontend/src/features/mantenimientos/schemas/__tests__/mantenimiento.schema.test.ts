@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   cancelarSchema,
   completarSchema,
+  correctivoSchema,
   programarSchema,
   reprogramarSchema,
 } from '../mantenimiento.schema';
@@ -41,5 +42,19 @@ describe('mantenimiento schemas', () => {
   it('cancelar exige motivo no vacío', () => {
     expect(cancelarSchema.safeParse({ motivo: 'Equipo retirado' }).success).toBe(true);
     expect(cancelarSchema.safeParse({ motivo: '   ' }).success).toBe(false);
+  });
+
+  it('correctivo válido, exige descripción y seguimiento posterior', () => {
+    const base = {
+      activo: 1,
+      observacion: 'No enciende',
+      fecha_programada: '2026-11-10',
+      fecha_seguimiento: '2026-12-01',
+    };
+    expect(correctivoSchema.safeParse(base).success).toBe(true);
+    expect(correctivoSchema.safeParse({ ...base, observacion: ' ' }).success).toBe(false);
+    expect(correctivoSchema.safeParse({ ...base, fecha_seguimiento: '2026-11-01' }).success).toBe(
+      false,
+    );
   });
 });

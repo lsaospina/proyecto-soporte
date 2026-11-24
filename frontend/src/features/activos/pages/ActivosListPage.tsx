@@ -8,7 +8,7 @@ import { useAuth } from '../../auth/hooks/useAuth';
 type EstadoFiltro = 'activos' | 'inactivos' | 'todos';
 
 function paramsFor(estado: EstadoFiltro, search: string): Record<string, unknown> {
-  const params: Record<string, unknown> = { page_size: 100 };
+  const params: Record<string, unknown> = { page_size: 100, estado_no: 'DADO_DE_BAJA' };
   if (estado === 'activos') params.is_active = true;
   if (estado === 'inactivos') params.is_active = false;
   if (estado === 'todos') params.todos = 1;
