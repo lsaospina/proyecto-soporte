@@ -31,3 +31,17 @@ def test_fecha_futura_rechazada():
             {"serial": "X", "modelo": None, "fecha_adquisicion": date.today() + timedelta(days=1)},
             actor=None,
         )
+
+
+def test_asignacion_activa_y_dias():
+    from freezegun import freeze_time
+
+    from apps.activos.models import AsignacionActivo
+
+    with freeze_time("2026-11-15 12:00:00"):
+        abierta = AsignacionActivo(fecha_inicio=date(2026, 11, 1))
+        cerrada = AsignacionActivo(fecha_inicio=date(2026, 10, 1), fecha_fin=date(2026, 10, 21))
+        assert abierta.activa is True
+        assert abierta.dias_asignado == 14
+        assert cerrada.activa is False
+        assert cerrada.dias_asignado == 20

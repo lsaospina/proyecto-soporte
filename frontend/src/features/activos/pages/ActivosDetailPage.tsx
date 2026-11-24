@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { PageHeader } from '../../../components/shared/PageHeader';
 import { StatusBadge, type BadgeVariant } from '../../../components/shared/StatusBadge';
 import { ConfirmDialog } from '../../../components/shared/ConfirmDialog';
+import { formatearFecha } from '../../../lib/format';
 import { activosApi } from '../api/activos.api';
+import { asignacionesApi } from '../../asignaciones/api/asignaciones.api';
 import { useAuth } from '../../auth/hooks/useAuth';
 
 const ESTADO_VARIANT: Record<string, BadgeVariant> = {
@@ -30,6 +32,10 @@ export function ActivosDetailPage() {
   const { data: historial } = useQuery({
     queryKey: ['activos', id, 'historial'],
     queryFn: () => activosApi.historial(Number(id)),
+  });
+  const { data: asignaciones } = useQuery({
+    queryKey: ['asignaciones', 'activo', id],
+    queryFn: () => asignacionesApi.list({ activo: Number(id), page_size: 100 }),
   });
 
   if (isLoading || !data) return <div>Cargando…</div>;
@@ -81,7 +87,30 @@ export function ActivosDetailPage() {
         <p>
           Estado: <StatusBadge variant={ESTADO_VARIANT[data.estado] ?? 'neutral'}>{data.estado}</StatusBadge>
         </p>
+        <p>Responsable actual: {data.responsable_actual ?? 'Sin asignar'}</p>
         <p>Activo: {data.is_active ? 'Sí' : 'No'}</p>
+      </div>
+
+      <div>
+        <h3>Historial de asignaciones</h3>
+        {asignaciones && asignaciones.results.length === 0 ? (
+          <p style={{ color: 'var(--text-muted)' }}>Este equipo no tiene asignaciones registradas.</p>
+        ) : (
+          <ul>
+            {(asignaciones?.results ?? []).map((asignacion) => (
+              <li key={asignacion.id}>
+                {asignacion.usuario_nombre} ({asignacion.usuario_email}) — desde{' '}
+                {formatearFecha(asignacion.fecha_inicio)} hasta{' '}
+                {asignacion.fecha_fin ? formatearFecha(asignacion.fecha_fin) : 'la fecha'} —{' '}
+                {asignacion.activa ? 'Vigente' : 'Cerrada'} · registrada por{' '}
+                {asignacion.asignado_por_nombre}
+              </li>
+            ))}
+          </ul>
+        )}
+        <Link to={`/asignaciones?search=${encodeURIComponent(data.codigo_qr)}`} style={{ fontSize: 13 }}>
+          Gestionar asignaciones de este equipo
+        </Link>
       </div>
 
       <div>

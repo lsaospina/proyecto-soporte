@@ -25,19 +25,23 @@
 - `backend/apps/common/views.py` — `HealthCheckView` (GET /api/v1/health/)
 
 ### App activos
-- `backend/apps/activos/models.py` — `Activo`, `EstadoActivo` (simple-history)
+- `backend/apps/activos/models.py` — `Activo`, `EstadoActivo`, `AsignacionActivo` (históricos, constraint de una asignación abierta y CHECK de fechas)
 - `backend/apps/activos/utils.py` — `normalizar_serial`, `normalizar_mac`
-- `backend/apps/activos/selectors.py` — `listar_activos` (select_related, filtros)
-- `backend/apps/activos/services.py` — crear/actualizar/inactivar/reactivar/cambiar_estado
-- `backend/apps/activos/serializers.py` — ActivoSerializer, ActivoCreateUpdateSerializer
-- `backend/apps/activos/filters.py` — `ActivoFilter` (incluye `estado_no` para excluir `DADO_DE_BAJA`)
-- `backend/apps/activos/views.py` — ActivoViewSet (list/create/retrieve/partial_update, inactivar/reactivar/historial)
-- `backend/apps/activos/urls.py` — router `/api/v1/activos/`
-- `backend/apps/activos/permissions.py` — `IsActivoAccess`
-- `backend/apps/activos/admin.py` — admin
+- `backend/apps/activos/selectors.py` — `listar_activos` (con `responsable_actual` anotado), `listar_asignaciones`, `resumen_asignaciones`, `usuarios_asignables`
+- `backend/apps/activos/services.py` — CRUD/inactivar/reactivar/cambiar_estado + `asignar_activo`, `cerrar_asignacion`, `reasignar_activo` (sincronizan estado y auditan)
+- `backend/apps/activos/serializers.py` — ActivoSerializer (con `responsable_actual`), lecturas/escrituras de asignación y resumen
+- `backend/apps/activos/filters.py` — `ActivoFilter` (incluye `estado_no`) y `AsignacionFilter`
+- `backend/apps/activos/views.py` — `ActivoViewSet` y `AsignacionViewSet` (create/cerrar/reasignar/resumen/usuarios)
+- `backend/apps/activos/urls.py` — routers `/api/v1/activos/` y `/api/v1/asignaciones/`
+- `backend/apps/activos/permissions.py` — `IsActivoAccess`, `IsAsignacionAccess` (lectura ADMIN/TÉCNICO, escritura ADMIN)
+- `backend/apps/activos/admin.py` — admin de activos y asignaciones (solo lectura)
+- `backend/apps/activos/management/commands/seed_asignaciones_dev.py` — seed idempotente que regulariza estados y crea historial
 - `backend/apps/activos/migrations/0001_initial.py` — esquema inicial
-- `backend/apps/activos/tests/unit/test_activos_unit.py` — normalización, transiciones, fecha futura
+- `backend/apps/activos/migrations/0002_historicalasignacionactivo_asignacionactivo.py` — asignaciones
+- `backend/apps/activos/tests/unit/test_activos_unit.py` — normalización, transiciones, fechas y propiedades de asignación
 - `backend/apps/activos/tests/integration/test_activos_api.py` — permisos, unicidad, reglas, historial, auditoría, filtros, num queries
+- `backend/apps/activos/tests/integration/test_asignaciones_api.py` — permisos, alta, doble asignación, estado, devolución, reasignación, filtros, resumen y responsable actual
+- `backend/apps/activos/tests/integration/test_seed_asignaciones.py` — guarda DEBUG, regularización e idempotencia
 
 ### App mantenimientos
 - `backend/apps/mantenimientos/models.py` — `Mantenimiento` (activo, tipo, fechas, técnico, costo, estado, `reprogramacion_de`), situación derivada, `HistoricalMantenimiento`
@@ -226,8 +230,19 @@
 - `schemas/__tests__/licencia.schema.test.ts` — validaciones Zod
 - `utils/__tests__/licencias.test.ts` — suma de meses y textos de días
 
+### Módulo Asignaciones (`frontend/src/features/asignaciones/`)
+- `api/asignaciones.api.ts` — API `/api/v1/asignaciones/` (lista, resumen, usuarios, crear, cerrar, reasignar)
+- `types/index.ts` — contratos de asignación, resumen y payloads
+- `schemas/asignacion.schema.ts` — Zod de asignación/reasignación y devolución (fechas válidas)
+- `utils/asignaciones.ts` — etiquetas de rol, estilo de campos y duración
+- `components/AsignarDialog.tsx` — alta y reasignación con selects de equipos disponibles/colaboradores
+- `components/DevolverDialog.tsx` — registro de devolución
+- `pages/AsignacionesPage.tsx` — KPIs, filtros activas/historial, tabla, paginación y acciones
+- `__tests__/AsignacionesPage.test.tsx` — MSW: carga, filtros, alta, reasignación, devolución, rol técnico y error
+- `schemas/__tests__/asignacion.schema.test.ts` — validaciones Zod
+
 ### Rutas y Vistas
-- `frontend/src/routes/Router.tsx` — rutas; `/usuarios*` y `/licencias*` bajo guardia ADMINISTRADOR; `/activos*` y `/mantenimientos` bajo ADMINISTRADOR/TECNICO
+- `frontend/src/routes/Router.tsx` — rutas; `/usuarios*` y `/licencias*` bajo guardia ADMINISTRADOR; `/activos*`, `/asignaciones` y `/mantenimientos` bajo ADMINISTRADOR/TECNICO
 - `frontend/src/routes/ProtectedRoute.tsx` — guardia de autenticación y roles (redirige a `/dashboard` si rol no permitido)
 - `frontend/src/lib/format.ts` — moneda COP, fechas dd/MM/yyyy, día/mes corto y `aISO`
 - `frontend/src/features/dashboard/api/dashboard.api.ts` — API `/api/v1/dashboard/resumen/`

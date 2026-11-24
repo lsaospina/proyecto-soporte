@@ -1,19 +1,36 @@
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status, viewsets
+from drf_spectacular.utils import extend_schema
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.response import Response
 
-from apps.activos.filters import ActivoFilter
+from apps.activos.filters import ActivoFilter, AsignacionFilter
 from apps.activos.models import Activo
-from apps.activos.permissions import IsActivoAccess
-from apps.activos.selectors import listar_activos
-from apps.activos.serializers import ActivoCreateUpdateSerializer, ActivoSerializer
+from apps.activos.permissions import IsActivoAccess, IsAsignacionAccess
+from apps.activos.selectors import (
+    listar_activos,
+    listar_asignaciones,
+    resumen_asignaciones,
+    usuarios_asignables,
+)
+from apps.activos.serializers import (
+    ActivoCreateUpdateSerializer,
+    ActivoSerializer,
+    AsignacionSerializer,
+    AsignarActivoSerializer,
+    CerrarAsignacionSerializer,
+    ResumenAsignacionesSerializer,
+    UsuarioAsignableSerializer,
+)
 from apps.activos.services import (
     actualizar_activo,
+    asignar_activo,
+    cerrar_asignacion,
     crear_activo,
     inactivar_activo,
     reactivar_activo,
+    reasignar_activo,
 )
 from apps.common.pagination import StandardResultsSetPagination
 
@@ -110,3 +127,96 @@ class ActivoViewSet(viewsets.ModelViewSet):
             for h in hist
         ]
         return Response(data)
+
+
+class AsignacionViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin,
+    viewsets.GenericViewSet,
+):
+    permission_classes = [IsAsignacionAccess]
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = AsignacionFilter
+    search_fields = [
+        "activo__serial",
+        "activo__codigo_qr",
+        "usuario__nombre_completo",
+        "usuario__email",
+        "activo__modelo__marca__nombre",
+        "activo__modelo__nombre",
+    ]
+    ordering_fields = ["fecha_inicio", "fecha_fin", "created_at"]
+    ordering = ["-fecha_inicio", "-id"]
+    http_method_names = ["get", "post", "head", "options"]
+
+    def get_queryset(self):
+        return listar_asignaciones()
+
+    def get_serializer_class(self):
+        if self.action in ("create", "reasignar"):
+            return AsignarActivoSerializer
+        if self.action == "cerrar":
+            return CerrarAsignacionSerializer
+        return AsignacionSerializer
+
+    def _ip(self):
+        from apps.auditoria.utils import get_client_ip
+
+        return get_client_ip(self.request)
+
+    @extend_schema(request=AsignarActivoSerializer, responses={201: AsignacionSerializer})
+    def create(self, request, *args, **kwargs):
+        serializer = AsignarActivoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        datos = serializer.validated_data
+        instancia = asignar_activo(
+            datos["activo"],
+            datos["usuario"],
+            fecha_inicio=datos.get("fecha_inicio"),
+            observacion=datos.get("observacion", ""),
+            actor=request.user,
+            ip=self._ip(),
+        )
+        return Response(AsignacionSerializer(instancia).data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(request=CerrarAsignacionSerializer, responses={200: AsignacionSerializer})
+    @action(detail=True, methods=["post"])
+    def cerrar(self, request, pk=None):
+        asignacion = self.get_object()
+        serializer = CerrarAsignacionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instancia = cerrar_asignacion(
+            asignacion,
+            fecha_fin=serializer.validated_data.get("fecha_fin"),
+            actor=request.user,
+            ip=self._ip(),
+        )
+        return Response(AsignacionSerializer(instancia).data)
+
+    @extend_schema(request=AsignarActivoSerializer, responses={201: AsignacionSerializer})
+    @action(detail=False, methods=["post"])
+    def reasignar(self, request):
+        serializer = AsignarActivoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        datos = serializer.validated_data
+        instancia = reasignar_activo(
+            datos["activo"],
+            datos["usuario"],
+            fecha_inicio=datos.get("fecha_inicio"),
+            observacion=datos.get("observacion", ""),
+            actor=request.user,
+            ip=self._ip(),
+        )
+        return Response(AsignacionSerializer(instancia).data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(responses={200: ResumenAsignacionesSerializer})
+    @action(detail=False, methods=["get"])
+    def resumen(self, request):
+        return Response(ResumenAsignacionesSerializer(resumen_asignaciones()).data)
+
+    @extend_schema(responses={200: UsuarioAsignableSerializer(many=True)})
+    @action(detail=False, methods=["get"])
+    def usuarios(self, request):
+        return Response(UsuarioAsignableSerializer(usuarios_asignables(), many=True).data)

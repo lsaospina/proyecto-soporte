@@ -41,6 +41,7 @@ export function ActivosListPage() {
     { key: 'modelo', header: 'Modelo', render: (r: any) => `${r.marca_nombre} / ${r.modelo_nombre}` },
     { key: 'categoria', header: 'Categoría', render: (r: any) => r.categoria_nombre },
     { key: 'estado', header: 'Estado', render: (r: any) => r.estado },
+    { key: 'responsable', header: 'Responsable', render: (r: any) => r.responsable_actual ?? '—' },
     { key: 'is_active', header: 'Activo', render: (r: any) => (r.is_active ? 'Sí' : 'No') },
     {
       key: 'acciones',

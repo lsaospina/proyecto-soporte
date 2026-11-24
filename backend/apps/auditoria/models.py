@@ -39,6 +39,8 @@ class AccionAuditoria(models.TextChoices):
     LICENCIA_INACTIVADA = "LICENCIA_INACTIVADA", "Licencia inactivada"
     LICENCIA_REACTIVADA = "LICENCIA_REACTIVADA", "Licencia reactivada"
     LICENCIA_RENOVADA = "LICENCIA_RENOVADA", "Licencia renovada"
+    ASIGNACION_CREADA = "ASIGNACION_CREADA", "Activo asignado"
+    ASIGNACION_CERRADA = "ASIGNACION_CERRADA", "Asignación cerrada"
 
 
 class RegistroAuditoria(BaseModel):

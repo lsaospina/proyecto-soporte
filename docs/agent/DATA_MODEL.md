@@ -29,6 +29,8 @@ Elección del usuario: `[ ] A   [ ] B   [ ] A con ajustes: ________`
 
 **Aprobación parcial para T-007 licencias (2026-11-24):** `Proveedor` y `Licencia` (con los campos operativos que reemplazan el Excel de control de licencias) → **APROBADO**. `Software`, `LicenciaActivo` y `Garantia` siguen PENDIENTES (licencias sin asignación a activos y garantías en segunda fase). Ver ADR-019.
 
+**Aprobación parcial para T-005 asignaciones (2026-11-24):** `AsignacionActivo` (activo, usuario, asignado_por, fechas, observación, histórico y una sola asignación abierta por activo) → **APROBADO**. `MovimientoActivo` sigue PENDIENTE: la trazabilidad de responsables se cubre con el historial de asignaciones. Ver ADR-020.
+
 | Modelo | Campos clave | Constraints / notas | Estado |
 |---|---|---|---|
 | Usuario | email (único), nombre_completo, rol, is_active | AbstractUser; rol: TextChoices | APROBADO (T-002) |
@@ -38,8 +40,8 @@ Elección del usuario: `[ ] A   [ ] B   [ ] A con ajustes: ________`
 | Marca | nombre | único CI. is_active | APROBADO (T-003) |
 | ModeloActivo | marca FK, categoria FK, nombre | único (marca, nombre) CI. is_active | APROBADO (T-003) |
 | Activo | serial, modelo FK, fecha_adquisicion, valor_adquisicion (opc.), estado, codigo_qr, procesador (opc.), ram_gb (opc.), almacenamiento_gb (opc.), direccion_mac (opc., única si no vacía), observaciones (opc.), is_active | serial y codigo_qr únicos; estado: TextChoices (DISPONIBLE, ASIGNADO, EN_MANTENIMIENTO, DADO_DE_BAJA); sin ubicacion (ubicación efectiva se deriva de la asignación, 3FN) | APROBADO (T-004) |
-| AsignacionActivo | activo FK, usuario FK, asignado_por FK, fecha_inicio, fecha_fin (nulo), observacion | único parcial: un activo con una sola asignación abierta (`fecha_fin` nula). El responsable actual se **deriva**, no se guarda en Activo | PENDIENTE |
-| MovimientoActivo (Trazabilidad) | activo FK, tipo_movimiento, fecha_movimiento, usuario FK, ubicacion_origen FK, ubicacion_destino FK, observacion | Solo inserción (append-only) | PENDIENTE |
+| AsignacionActivo | activo FK, usuario FK, asignado_por FK, fecha_inicio, fecha_fin (nulo), observacion | único parcial: un activo con una sola asignación abierta (`fecha_fin` nula). El responsable actual se **deriva**, no se guarda en Activo. Histórico simple-history | APROBADO (T-005) |
+| MovimientoActivo (Trazabilidad) | activo FK, tipo_movimiento, fecha_movimiento, usuario FK, ubicacion_origen FK, ubicacion_destino FK, observacion | Solo inserción (append-only) | PENDIENTE (T-005 cubre responsables con AsignacionActivo) |
 | Mantenimiento | activo FK, tipo (PREVENTIVO/CORRECTIVO), fecha_programada, fecha_realizacion, fecha_seguimiento (opc.), tecnico FK, costo, observacion, motivo_cancelacion, estado (PROGRAMADO/COMPLETADO/CANCELADO), reprogramacion_de (OneToOne self, opc.) | CHECK costo ≥ 0; índices fecha_programada/estado; situación (PENDIENTE/VENCIDO/INCUMPLIDO/COMPLETADO/CANCELADO) **derivada**, no almacenada; INCUMPLIDO = evidencia inmutable. CORRECTIVO = registro directo (evento + seguimiento) que no entra en KPI/calendario preventivo | APROBADO (T-006a) |
 | RepuestoMantenimiento | mantenimiento FK, descripcion, cantidad, costo_unitario | CASCADE desde Mantenimiento; CHECK cantidad > 0 | PENDIENTE |
 | Incidente | activo FK, reportado_por FK, fecha, descripcion, estado | | PENDIENTE |
@@ -95,3 +97,9 @@ Elección del usuario: `[ ] A   [ ] B   [ ] A con ajustes: ________`
 |---|---|---|---|
 | `Proveedor` | licencias_garantias | `nombre` (único CI), `contacto` (opc.), `is_active` | `HistoricalProveedor`. El alta/edición es implícita al guardar una licencia (ADR-019). |
 | `Licencia` | licencias_garantias | `proveedor` FK PROTECT, `servicio` (texto), `periodicidad` (TextChoices), `fecha_renovacion` DateField, `cantidad` int ≥1, `valor` Decimal 12,2 nulo ≥0, `renovacion_automatica` bool, `medio_pago`, `cuenta_vinculada`, `responsable_uso`, `observacion`, `is_active` | `HistoricalLicencia`. `dias_para_renovacion` y `estado_renovacion` derivados (hoy + 30 días). Índices por fecha/proveedor. Migración `licencias_garantias/0001`. Endpoints `/api/v1/licencias/` con `resumen/`, `proveedores/`, `renovar/`, `inactivar/`, `reactivar/`; solo ADMINISTRADOR (RF009). Seed `seed_licencias_dev`. |
+
+### Aprobado e implementado en T-005 asignaciones (APROBADO 2026-11-24)
+
+| Modelo | App | Campos/Definición | Notas |
+|---|---|---|---|
+| `AsignacionActivo` | activos | `activo` FK PROTECT, `usuario` FK PROTECT, `asignado_por` FK PROTECT, `fecha_inicio` DateField, `fecha_fin` DateField nulo, `observacion` texto | `HistoricalAsignacionActivo`; constraint único parcial de asignación abierta por activo y CHECK de fechas; `activa`/`dias_asignado` derivados. La asignación pone el activo en ASIGNADO y la devolución en DISPONIBLE. Migración `activos/0002`. Endpoints `/api/v1/asignaciones/` (`resumen/`, `usuarios/`, `cerrar/`, `reasignar/`): lectura ADMIN/TÉCNICO, escritura solo ADMINISTRADOR (RF005/RF012). Seed `seed_asignaciones_dev`. `Activo.responsable_actual` derivado por subconsulta. |

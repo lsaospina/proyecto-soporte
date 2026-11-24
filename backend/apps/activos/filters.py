@@ -1,6 +1,6 @@
 import django_filters
 
-from apps.activos.models import Activo, EstadoActivo
+from apps.activos.models import Activo, AsignacionActivo, EstadoActivo
 
 
 class ActivoFilter(django_filters.FilterSet):
@@ -27,3 +27,18 @@ class ActivoFilter(django_filters.FilterSet):
             "fecha_hasta",
             "is_active",
         ]
+
+
+class AsignacionFilter(django_filters.FilterSet):
+    activo = django_filters.NumberFilter(field_name="activo_id")
+    usuario = django_filters.NumberFilter(field_name="usuario_id")
+    abierta = django_filters.BooleanFilter(method="filtrar_abierta")
+    fecha_desde = django_filters.DateFilter(field_name="fecha_inicio", lookup_expr="gte")
+    fecha_hasta = django_filters.DateFilter(field_name="fecha_inicio", lookup_expr="lte")
+
+    class Meta:
+        model = AsignacionActivo
+        fields = ["activo", "usuario", "abierta", "fecha_desde", "fecha_hasta"]
+
+    def filtrar_abierta(self, queryset, name, value):
+        return queryset.filter(fecha_fin__isnull=value)

@@ -13,6 +13,7 @@ import {
   LogOut,
   Menu,
   ChevronLeft,
+  UserCheck,
 } from 'lucide-react';
 
 import type { UserRole } from '../../features/auth/types';
@@ -28,6 +29,7 @@ const navItems: NavItem[] = [
   { label: 'Dashboard', to: '/dashboard', icon: <LayoutDashboard size={20} />, roles: ['ADMINISTRADOR', 'TECNICO'] },
   { label: 'Catálogos', to: '/catalogos', icon: <Database size={20} />, roles: ['ADMINISTRADOR'] },
   { label: 'Activos', to: '/activos', icon: <Monitor size={20} />, roles: ['ADMINISTRADOR', 'TECNICO', 'USUARIO_RESPONSABLE'] },
+  { label: 'Asignaciones', to: '/asignaciones', icon: <UserCheck size={20} />, roles: ['ADMINISTRADOR', 'TECNICO'] },
   { label: 'Mantenimientos', to: '/mantenimientos', icon: <Wrench size={20} />, roles: ['ADMINISTRADOR', 'TECNICO'] },
   { label: 'Usuarios', to: '/usuarios', icon: <Users size={20} />, roles: ['ADMINISTRADOR'] },
   { label: 'Licencias', to: '/licencias', icon: <FileKey size={20} />, roles: ['ADMINISTRADOR'] },

@@ -1,5 +1,7 @@
+from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.utils import timezone
 from simple_history.models import HistoricalRecords
 
 from apps.catalogos.models import ModeloActivo
@@ -49,3 +51,56 @@ class Activo(BaseModel):
 
     def __str__(self):
         return self.serial
+
+
+class AsignacionActivo(BaseModel):
+    activo = models.ForeignKey(Activo, on_delete=models.PROTECT, related_name="asignaciones")
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="asignaciones_recibidas",
+    )
+    asignado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="asignaciones_realizadas",
+    )
+    fecha_inicio = models.DateField()
+    fecha_fin = models.DateField(null=True, blank=True)
+    observacion = models.TextField(blank=True, default="")
+
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = "Asignación de activo"
+        verbose_name_plural = "Asignaciones de activos"
+        ordering = ["-fecha_inicio", "-id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["activo"],
+                condition=models.Q(fecha_fin__isnull=True),
+                name="asignacion_activo_abierta_unica",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(fecha_fin__isnull=True)
+                | models.Q(fecha_fin__gte=models.F("fecha_inicio")),
+                name="asignacion_fechas_validas",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["activo"], name="asignacion_activo_idx"),
+            models.Index(fields=["usuario"], name="asignacion_usuario_idx"),
+            models.Index(fields=["fecha_inicio"], name="asignacion_inicio_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.activo.serial} - {self.usuario.nombre_completo}"
+
+    @property
+    def activa(self) -> bool:
+        return self.fecha_fin is None
+
+    @property
+    def dias_asignado(self) -> int:
+        fin = self.fecha_fin or timezone.localdate()
+        return max((fin - self.fecha_inicio).days, 0)

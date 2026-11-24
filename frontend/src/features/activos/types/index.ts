@@ -15,6 +15,7 @@ export interface Activo {
   direccion_mac: string;
   observaciones: string;
   is_active: boolean;
+  responsable_actual?: string | null;
   created_at: string;
   updated_at: string;
 }

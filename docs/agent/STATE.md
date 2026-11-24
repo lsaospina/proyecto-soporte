@@ -1,10 +1,10 @@
 # STATE — estado vivo del proyecto
 
 > El agente actualiza este archivo al cerrar cada tarea. Mantenerlo corto (no es un historial completo).
-> Última actualización: 2026-11-24 · por: agente (Licencias T-007 parcial)
+> Última actualización: 2026-11-24 · por: agente (Asignaciones T-005)
 
 ## Tarea actual
-**Licencias (T-007 parcial) COMPLETO.** App `licencias_garantias` (Proveedor + Licencia con histórico), API `/api/v1/licencias/` (`resumen`, `proveedores`, `renovar`, `inactivar`, `reactivar`, filtros por estado de renovación) solo ADMINISTRADOR, y pantalla `/licencias` con KPIs, alertas, filtros, alta/edición, renovación y seed de 15 registros. Reemplaza el Excel de control de licencias; no hay importación/exportación de Excel. Siguiente: garantías por activo (segunda fase T-007/ADR-019) o repuestos/incidentes.
+**Asignaciones y trazabilidad (T-005) COMPLETO.** Relación activo↔colaborador con una sola asignación abierta, sincronización del estado (`ASIGNADO` al asignar, `DISPONIBLE` al devolver), reasignación con historial completo y auditoría. API `/api/v1/asignaciones/` (lectura ADMIN/TÉCNICO, escritura ADMIN) y menú `/asignaciones` con KPIs, filtros, alta, reasignación y devolución; el activo muestra su responsable actual y su historial de asignaciones. Siguiente: movimientos/ubicaciones (`MovimientoActivo`, pendiente) o garantías/repuestos/incidentes.
 
 ## Hecho
 - Documento de análisis y diseño (docx), mockups, diccionario de datos (baseline). Repo y documentación para agentes instalada.
@@ -17,6 +17,7 @@
 - **T-006a correctivos (ADR-017):** `fecha_seguimiento` en `Mantenimiento` (migración `0002`), `POST /api/v1/mantenimientos/correctivos/` y filtro `?tipo=`, registro directo `COMPLETADO` que no altera KPI/calendario preventivo; pestaña **Correctivos** en `/mantenimientos` con lista y diálogo (equipo, qué pasó, fecha evento, seguimiento, técnico). Pruebas: 7 integración correctivos + seed; frontend 88 Vitest; ruff/lint/typecheck OK. Seed añade 3 correctivos de ejemplo. Los listados/selects de equipos (Activos y mantenimientos) filtran `is_active=true` y `estado_no=DADO_DE_BAJA`.
 - **Dashboard analítico (ADR-018, avance de T-011):** app `dashboard` con `GET /api/v1/dashboard/resumen/` (KPIs de inventario, valor, cumplimiento preventivo anual y mensual, próximos 14 días, vencidos con días de atraso, correctivos de 30 días y costo del año) calculado en `selectors.py`; admin/técnico reciben mantenimiento y costos, el usuario responsable solo inventario. UI `/dashboard` rediseñada con alertas operativas, KPIs, gráfica mensual apilada, distribución por estado/categoría/marca y listas accionables; se retiró "Registrar Activo". Pruebas: 5 integración backend, 6 Vitest frontend; ruff/lint/typecheck OK.
 - **Licencias T-007 parcial (ADR-019):** app `licencias_garantias` (`Proveedor`, `Licencia`, históricos, migración `0001`), estado de renovación derivado (VIGENTE/POR_VENCER/VENCIDA/INACTIVA, umbral 30 días) sin campo almacenado, acciones de auditoría `LICENCIA_*` (migración `auditoria/0006`), API `/api/v1/licencias/` solo ADMINISTRADOR (`resumen` con costo anualizado, `proveedores`, `renovar`, `inactivar`, `reactivar`, filtros/búsqueda/orden/paginación) y comando `seed_licencias_dev`. UI `/licencias`: KPIs, alertas de vencidas/por vencer, filtros por proveedor/periodicidad/estado, tabla con paginación, crear/editar y diálogo de renovación. Pruebas: 23 backend, 15 Vitest; ruff/lint/typecheck OK. Garantías pendientes.
+- **Asignaciones y trazabilidad T-005 (ADR-020):** `AsignacionActivo` (+ histórico, migración `activos/0002`) con constraint parcial de una sola asignación abierta y CHECK de fechas; `activa`/`dias_asignado` derivados. Servicios `asignar`/`cerrar`/`reasignar` sincronizan `Activo.estado` (ASIGNADO↔DISPONIBLE) con auditoría `ASIGNACION_CREADA`/`ASIGNACION_CERRADA` (`auditoria/0007`). API `/api/v1/asignaciones/` (lectura ADMIN/TÉCNICO, escritura ADMIN; `resumen`, `usuarios`, `cerrar`, `reasignar`, filtros por activo/usuario/abierta/búsqueda) y `responsable_actual` derivado en activos. UI `/asignaciones` con KPIs, filtros, alta, reasignación y devolución; el detalle del activo muestra el responsable y todo el historial. Seed `seed_asignaciones_dev` regulariza los ASIGNADO del seed de inventario (18 registros en dev). Pruebas: 22 backend nuevas, 119 Vitest; ruff/lint/typecheck OK.
 
 ## Backlog (cada tarea = módulo completo: backend + frontend + pruebas)
 | ID | Alcance | Depende de |
@@ -49,8 +50,8 @@
 - `Ubicacion` (catálogo) queda sin uso por Activo en T-004 (la ubicación efectiva se deriva de la asignación en T-005). No borrar; reutilizar en T-005.
 
 ## Registro de sesiones (solo las últimas 5, una línea c/u)
-- 2026-11-12: T-002 FASE A commiteada por usuario (usuarios/auditoría/auth). ruff/migrations OK, 17 unit + 67 not-system passed.
 - 2026-11-12: T-002 FASE B completada (cambio obligatorio, gestión usuarios UI, docs/ADRs). Frontend lint/typecheck OK, 28/28 Vitest.
 - 2026-11-24: T-004 Fase D pruebas y T-006a preventivos (backend+frontend) completos. Backend 35 unit/164 not-system; frontend 84 Vitest; ruff/typecheck OK. Correctivos básicos añadidos (pestaña, API y seed); frontend 88 Vitest.
 - 2026-11-24: Dashboard analítico (endpoint agregado por rol + UI con KPIs, gráficas y listas accionables; sin "Registrar Activo"). Backend 179 passed; frontend 94 Vitest; ruff/lint/typecheck OK. `npm run build` falla por tipos MSW preexistentes en pruebas.
 - 2026-11-24: Licencias T-007 parcial (Proveedor/Licencia, API por rol admin, UI con KPIs, filtros, renovación y seed de 15 registros; sin Excel). Backend 202 passed; frontend 109 Vitest; ruff/lint/typecheck OK. Garantías pendientes.
+- 2026-11-24: Asignaciones T-005 (relación activo↔colaborador, estado sincronizado, reasignación e historial, UI y seed de 18 registros). Backend 224 passed; frontend 119 Vitest; ruff/lint/typecheck OK. MovimientoActivo/ubicaciones pendientes.

@@ -14,6 +14,7 @@ import { UsuarioFormPage } from '../features/usuarios/pages/UsuarioFormPage';
 import { MantenimientosPage } from '../features/mantenimientos/pages/MantenimientosPage';
 import { LicenciasPage } from '../features/licencias/pages/LicenciasPage';
 import { LicenciaFormPage } from '../features/licencias/pages/LicenciaFormPage';
+import { AsignacionesPage } from '../features/asignaciones/pages/AsignacionesPage';
 
 export function Router() {
   return (
@@ -40,6 +41,7 @@ export function Router() {
               <Route path="/activos/nuevo" element={<ActivosFormPage />} />
               <Route path="/activos/:id" element={<ActivosDetailPage />} />
               <Route path="/activos/:id/editar" element={<ActivosFormPage />} />
+              <Route path="/asignaciones" element={<AsignacionesPage />} />
               <Route path="/mantenimientos" element={<MantenimientosPage />} />
             </Route>
 
