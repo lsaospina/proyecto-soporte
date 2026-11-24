@@ -1,139 +1,351 @@
+import type { CSSProperties } from 'react';
+import { Link } from 'react-router-dom';
 import {
-  Monitor,
-  Wrench,
-  ShieldCheck,
   AlertTriangle,
-  Timer,
-  Badge,
-  Download,
-  Plus,
+  Archive,
+  ArrowRight,
+  CheckCircle2,
+  Monitor,
+  ShieldCheck,
+  Wallet,
+  Wrench,
 } from 'lucide-react';
-import { PageHeader } from '../../../components/shared/PageHeader';
 
-function KpiCard({
-  label,
-  value,
-  icon,
-  iconColor,
-  trendLabel,
-  trendValue,
-  trendColor,
-  sparklinePoints,
-}: {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-  iconColor: string;
-  trendLabel: string;
-  trendValue: string;
-  trendColor: string;
-  sparklinePoints: string;
-}) {
+import { ErrorState } from '../../../components/shared/ErrorState';
+import { KpiCard, type KpiTone } from '../../../components/shared/KpiCard';
+import { LoadingSkeleton } from '../../../components/shared/LoadingSkeleton';
+import { PageHeader } from '../../../components/shared/PageHeader';
+import { useAuth } from '../../auth/hooks/useAuth';
+import { AlertasTablero } from '../components/AlertasTablero';
+import { BarrasHorizontales, type BarraItem } from '../components/BarrasHorizontales';
+import { CumplimientoMensual } from '../components/CumplimientoMensual';
+import { ListaMantenimientos } from '../components/ListaMantenimientos';
+import { SeccionPanel } from '../components/SeccionPanel';
+import { UltimasAdquisiciones } from '../components/UltimasAdquisiciones';
+import { useDashboardResumen } from '../hooks/useDashboardResumen';
+import type { DashboardResumen, EstadoActivo } from '../types';
+import { formatearFecha, formatearMoneda } from '../../../lib/format';
+
+const TONO_ESTADO: Record<EstadoActivo, KpiTone> = {
+  DISPONIBLE: 'info',
+  ASIGNADO: 'success',
+  EN_MANTENIMIENTO: 'warning',
+  DADO_DE_BAJA: 'danger',
+};
+
+const enlaceAccion: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '4px',
+  fontSize: '12px',
+  fontWeight: 600,
+  color: 'var(--primary)',
+};
+
+const botonPrimario: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '6px',
+  padding: '8px 14px',
+  borderRadius: 'var(--radius-control)',
+  backgroundColor: 'var(--primary)',
+  color: 'var(--text-inverse)',
+  fontSize: '13px',
+  fontWeight: 600,
+};
+
+const botonSecundario: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '6px',
+  padding: '8px 14px',
+  borderRadius: 'var(--radius-control)',
+  backgroundColor: 'var(--surface-lowest)',
+  border: '1px solid var(--border)',
+  color: 'var(--text)',
+  fontSize: '13px',
+  fontWeight: 500,
+};
+
+const gridDosColumnas: CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+  gap: '16px',
+  marginBottom: '16px',
+};
+
+const gridTresColumnas: CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+  gap: '16px',
+  marginBottom: '16px',
+};
+
+function tonoDeCumplimiento(porcentaje: number, agendados: number): KpiTone {
+  if (agendados === 0) return 'neutral';
+  if (porcentaje >= 80) return 'success';
+  if (porcentaje >= 50) return 'warning';
+  return 'danger';
+}
+
+function Contenido({ data, puedeVerMantenimientos }: { data: DashboardResumen; puedeVerMantenimientos: boolean }) {
+  const activos = data.activos;
+  const mantenimientos = puedeVerMantenimientos ? data.mantenimientos : null;
+  const disponibilidad = activos.total > 0 ? Math.round((activos.operativos * 100) / activos.total) : 0;
+  const preventivos = mantenimientos?.preventivos_anio;
+
+  const barrasEstado: BarraItem[] = activos.por_estado.map((item) => ({
+    label: item.etiqueta,
+    value: item.total,
+    tone: TONO_ESTADO[item.estado],
+  }));
+
+  const categorias: BarraItem[] = activos.por_categoria.map((item) => ({
+    label: item.nombre,
+    value: item.total,
+    tone: 'primary',
+  }));
+  const marcas: BarraItem[] = activos.por_marca.map((item) => ({
+    label: item.nombre,
+    value: item.total,
+    tone: 'info',
+  }));
+
   return (
-    <div
-      style={{
-        backgroundColor: 'var(--surface-lowest)',
-        border: '1px solid var(--border)',
-        borderRadius: '8px',
-        padding: '16px',
-        minHeight: '120px',
-        boxShadow: 'var(--shadow-sm)',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-        <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>
-        <span style={{ color: iconColor }}>{icon}</span>
-      </div>
-      <span style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}>{value}</span>
-      <svg
-        className="w-full h-full stroke-current fill-none stroke-2"
-        preserveAspectRatio="none"
-        viewBox="0 0 100 24"
-        style={{ width: '100%', height: '20px', marginTop: '8px', color: iconColor }}
+    <>
+      {mantenimientos && <AlertasTablero mantenimientos={mantenimientos} anio={data.anio} />}
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+          gap: '16px',
+          marginBottom: '20px',
+        }}
       >
-        <polyline points={sparklinePoints} />
-      </svg>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
-        <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: trendColor, display: 'inline-block' }} />
-        <span style={{ fontSize: '11px', fontWeight: 600, color: trendColor }}>{trendValue}</span>
-        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{trendLabel}</span>
+        <KpiCard
+          label="Activos vigentes"
+          value={String(activos.total)}
+          hint={`${activos.inactivos} inactivo${activos.inactivos === 1 ? '' : 's'} en el inventario`}
+          icon={<Monitor size={16} />}
+          tone="primary"
+        />
+        <KpiCard
+          label="Operativos"
+          value={`${disponibilidad}%`}
+          hint={`${activos.operativos} disponibles o asignados`}
+          icon={<ShieldCheck size={16} />}
+          tone="success"
+        />
+        <KpiCard
+          label="En mantenimiento"
+          value={String(activos.en_mantenimiento)}
+          hint="Equipos fuera de operación"
+          icon={<Wrench size={16} />}
+          tone="warning"
+        />
+        <KpiCard
+          label="Dados de baja"
+          value={String(activos.dados_de_baja)}
+          hint="Histórico de bajas del inventario"
+          icon={<Archive size={16} />}
+          tone="neutral"
+        />
+        {preventivos && (
+          <>
+            <KpiCard
+              label="Preventivos vencidos"
+              value={String(preventivos.vencidos)}
+              hint="Requieren reprogramación o cierre"
+              icon={<AlertTriangle size={16} />}
+              tone="danger"
+            />
+            <KpiCard
+              label="Cumplimiento preventivo"
+              value={`${preventivos.porcentaje_cumplimiento}%`}
+              hint={`${preventivos.completados} de ${preventivos.agendados} agendados en ${data.anio}`}
+              icon={<CheckCircle2 size={16} />}
+              tone={tonoDeCumplimiento(preventivos.porcentaje_cumplimiento, preventivos.agendados)}
+            />
+          </>
+        )}
+        {mantenimientos && activos.valor_total !== null && (
+          <KpiCard
+            label="Valor del inventario"
+            value={formatearMoneda(activos.valor_total)}
+            hint={`Costo de mantenimiento ${data.anio}: ${formatearMoneda(mantenimientos.costo_anio)}`}
+            icon={<Wallet size={16} />}
+            tone="info"
+          />
+        )}
       </div>
-    </div>
+
+      {mantenimientos && preventivos && (
+        <>
+          <div style={gridDosColumnas}>
+            <SeccionPanel
+              title={`Cumplimiento preventivo ${data.anio}`}
+              subtitle={`${preventivos.completados} de ${preventivos.agendados} agendados · ${preventivos.porcentaje_cumplimiento}% de cumplimiento`}
+              action={
+                <Link to="/mantenimientos" style={enlaceAccion}>
+                  Ver calendario <ArrowRight size={12} />
+                </Link>
+              }
+            >
+              <CumplimientoMensual meses={mantenimientos.mensual} />
+            </SeccionPanel>
+
+            <SeccionPanel
+              title="Estado del inventario"
+              subtitle={`${activos.total} activos vigentes`}
+              action={
+                <Link to="/activos" style={enlaceAccion}>
+                  Ver inventario <ArrowRight size={12} />
+                </Link>
+              }
+            >
+              <BarrasHorizontales items={barrasEstado} vacio="Aún no hay activos registrados." />
+            </SeccionPanel>
+          </div>
+
+          <div style={gridTresColumnas}>
+            <SeccionPanel
+              title="Próximos 14 días"
+              subtitle="Preventivos pendientes en agenda"
+              action={
+                <Link to="/mantenimientos" style={enlaceAccion}>
+                  Ver todos <ArrowRight size={12} />
+                </Link>
+              }
+            >
+              <ListaMantenimientos
+                items={mantenimientos.proximos}
+                variante="proximo"
+                vacio="No hay mantenimientos programados en los próximos 14 días."
+              />
+            </SeccionPanel>
+
+            <SeccionPanel
+              title="Atención inmediata"
+              subtitle={`${preventivos.vencidos} preventivos vencidos`}
+              action={
+                <Link to="/mantenimientos" style={enlaceAccion}>
+                  Resolver <ArrowRight size={12} />
+                </Link>
+              }
+            >
+              <ListaMantenimientos
+                items={mantenimientos.vencidos}
+                variante="vencido"
+                vacio="No hay mantenimientos vencidos."
+              />
+            </SeccionPanel>
+
+            <SeccionPanel
+              title="Correctivos recientes"
+              subtitle={`${mantenimientos.correctivos.registrados_30_dias} en 30 días · ${formatearMoneda(mantenimientos.correctivos.costo_30_dias)}`}
+            >
+              <ListaMantenimientos
+                items={mantenimientos.correctivos.recientes}
+                variante="correctivo"
+                vacio="Sin correctivos registrados."
+              />
+            </SeccionPanel>
+          </div>
+        </>
+      )}
+
+      <div style={gridTresColumnas}>
+        <SeccionPanel title="Activos por categoría" subtitle="Distribución del inventario vigente">
+          <BarrasHorizontales items={categorias} vacio="Aún no hay activos registrados." />
+        </SeccionPanel>
+        <SeccionPanel title="Marcas principales" subtitle="Equipos por fabricante">
+          <BarrasHorizontales items={marcas} vacio="Aún no hay activos registrados." />
+        </SeccionPanel>
+        <SeccionPanel
+          title="Últimas adquisiciones"
+          subtitle="Ingresos más recientes al inventario"
+          action={
+            <Link to="/activos" style={enlaceAccion}>
+              Ver inventario <ArrowRight size={12} />
+            </Link>
+          }
+        >
+          <UltimasAdquisiciones activos={activos.ultimas_adquisiciones} />
+        </SeccionPanel>
+      </div>
+
+      {mantenimientos && mantenimientos.activos_sin_preventivo.total > 0 && (
+        <SeccionPanel
+          title={`Activos sin preventivo en ${data.anio}`}
+          subtitle={`${mantenimientos.activos_sin_preventivo.total} activos gestionables sin mantenimiento programado este año`}
+          action={
+            <Link to="/mantenimientos" style={enlaceAccion}>
+              Programar <ArrowRight size={12} />
+            </Link>
+          }
+        >
+          <UltimasAdquisiciones activos={mantenimientos.activos_sin_preventivo.activos} />
+        </SeccionPanel>
+      )}
+    </>
   );
 }
 
 export function DashboardPage() {
-  const sparklineDefault = '0,18 15,16 30,19 45,13 60,11 75,9 90,6 100,4';
-  const sparklineUp = '0,12 18,10 35,11 50,8 70,7 85,5 100,4';
-  const sparklineFluctuate = '0,6 20,8 40,14 60,12 80,18 100,16';
-  const sparklineDown = '0,20 18,17 38,15 54,8 72,11 88,6 100,5';
-  const sparklineMid = '0,15 20,13 40,16 60,11 80,7 100,5';
-  const sparklineFlat = '0,12 25,12 50,15 75,8 100,7';
+  const { user } = useAuth();
+  const { data, isLoading, isError, refetch } = useDashboardResumen();
+  const puedeVerMantenimientos = user?.rol === 'ADMINISTRADOR' || user?.rol === 'TECNICO';
+
+  const subtitulo = data
+    ? `Panorama del inventario${puedeVerMantenimientos ? ' y la operación de mantenimiento' : ''} al ${formatearFecha(data.hoy)}.`
+    : 'Panorama del inventario tecnológico y la operación de mantenimiento.';
 
   return (
-    <div style={{ backgroundColor: 'var(--background)', minHeight: '100vh' }}>
+    <div>
       <PageHeader
-        title="Centro de Comando de TI — Visión General"
-        subtitle="Monitoreo holístico de inventario tecnológico, ciclo de vida de garantías, licenciamiento de software y continuidad operativa de servicios."
+        title="Dashboard"
+        subtitle={subtitulo}
         actions={
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button
-              type="button"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 16px',
-                backgroundColor: 'var(--surface-lowest)',
-                border: '1px solid var(--border)',
-                borderRadius: '6px',
-                color: 'var(--text)',
-                fontSize: '13px',
-                fontWeight: 500,
-                cursor: 'pointer',
-              }}
-            >
-              <Download size={14} color="currentColor" />
-              <span>Exportar Resumen KPI</span>
-            </button>
-            <button
-              type="button"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 16px',
-                backgroundColor: 'var(--primary)',
-                color: '#FFFFFF',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              <Plus size={14} color="#FFFFFF" />
-              <span>+ Registrar Activo</span>
-            </button>
-          </div>
+          puedeVerMantenimientos ? (
+            <>
+              <Link to="/activos" style={botonSecundario}>
+                Ver inventario
+              </Link>
+              <Link to="/mantenimientos" style={botonPrimario}>
+                Mantenimientos
+              </Link>
+            </>
+          ) : undefined
         }
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '16px', marginBottom: '24px' }}>
-        <KpiCard label="Total de Activos" value="2,845" icon={<Monitor size={18} />} iconColor="var(--primary)" trendLabel="este mes" trendValue="+4.2%" trendColor="var(--success-fg)" sparklinePoints={sparklineDefault} />
-        <KpiCard label="Equipos Operativos" value="2,510" icon={<ShieldCheck size={18} />} iconColor="var(--success-fg)" trendLabel="disponibilidad" trendValue="88.2%" trendColor="var(--success-fg)" sparklinePoints={sparklineUp} />
-        <KpiCard label="En Mantenimiento" value="142" icon={<Wrench size={18} />} iconColor="var(--warning-fg)" trendLabel="9 taller · 133 interno" trendValue="" trendColor="var(--warning-fg)" sparklinePoints={sparklineFluctuate} />
-        <KpiCard label="Incidentes Abiertos" value="28" icon={<AlertTriangle size={18} />} iconColor="var(--danger-fg)" trendLabel="9 Altos · 15 Medios" trendValue="SLA Activo" trendColor="var(--danger-fg)" sparklinePoints={sparklineDown} />
-        <KpiCard label="Garantías por Vencer" value="34" icon={<Timer size={18} />} iconColor="var(--info-fg)" trendLabel="Próximos 60 días" trendValue="12 OEM Pro" trendColor="var(--info-fg)" sparklinePoints={sparklineMid} />
-        <KpiCard label="Licencias por Vencer" value="19" icon={<Badge size={18} />} iconColor="var(--primary)" trendLabel="Revisión presupuestal" trendValue="Q3/Q4" trendColor="var(--primary)" sparklinePoints={sparklineFlat} />
-      </div>
+      {isLoading && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '16px' }}>
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div
+              key={index}
+              style={{
+                padding: '16px',
+                minHeight: '112px',
+                backgroundColor: 'var(--surface-lowest)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-card)',
+              }}
+            >
+              <LoadingSkeleton lines={2} />
+            </div>
+          ))}
+        </div>
+      )}
 
-      <div style={{ backgroundColor: 'var(--surface-lowest)', border: '1px solid var(--border)', borderRadius: '8px', padding: '20px', boxShadow: 'var(--shadow-sm)' }}>
-        <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text)', marginBottom: '16px' }}>Estado del Sistema</h3>
-        <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
-          Los datos de métricas y gráficos se poblarán cuando se implementen los módulos de activos y mantenimientos (T-003 a T-007).
-        </p>
-      </div>
+      {isError && (
+        <ErrorState message="No se pudo cargar el tablero." onRetry={() => refetch()} />
+      )}
+
+      {data && !isLoading && !isError && (
+        <Contenido data={data} puedeVerMantenimientos={puedeVerMantenimientos} />
+      )}
     </div>
   );
 }

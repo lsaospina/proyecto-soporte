@@ -7,7 +7,7 @@ interface ErrorStateProps {
 
 export function ErrorState({ message = 'Ocurrió un error inesperado.', onRetry }: ErrorStateProps) {
   return (
-    <div style={{
+    <div role="alert" style={{
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',

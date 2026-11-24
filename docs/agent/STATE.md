@@ -1,10 +1,10 @@
 # STATE — estado vivo del proyecto
 
 > El agente actualiza este archivo al cerrar cada tarea. Mantenerlo corto (no es un historial completo).
-> Última actualización: 2026-11-24 · por: agente (T-006a preventivo backend+frontend)
+> Última actualización: 2026-11-24 · por: agente (Licencias T-007 parcial)
 
 ## Tarea actual
-**T-006a — Mantenimientos preventivos (backend + frontend COMPLETOS).** Calendario anual por mes, KPI agendados/realizados/%, situación derivada, completar, reprogramar (mueve 200 / crea evidencia 201) y cancelar (admin). Siguiente: T-006 correctivos/incidentes + repuestos (RepuestoMantenimiento sigue PENDIENTE).
+**Licencias (T-007 parcial) COMPLETO.** App `licencias_garantias` (Proveedor + Licencia con histórico), API `/api/v1/licencias/` (`resumen`, `proveedores`, `renovar`, `inactivar`, `reactivar`, filtros por estado de renovación) solo ADMINISTRADOR, y pantalla `/licencias` con KPIs, alertas, filtros, alta/edición, renovación y seed de 15 registros. Reemplaza el Excel de control de licencias; no hay importación/exportación de Excel. Siguiente: garantías por activo (segunda fase T-007/ADR-019) o repuestos/incidentes.
 
 ## Hecho
 - Documento de análisis y diseño (docx), mockups, diccionario de datos (baseline). Repo y documentación para agentes instalada.
@@ -13,7 +13,10 @@
 - **T-002 FASE A (backend, commiteada):** app `auditoria` (`RegistroAuditoria`, admin solo lectura), `Usuario.debe_cambiar_password`, normalización/`UniqueConstraint(Lower(email))` (migraciones `usuarios/0002-0004`, `auditoria/0001`), CRUD admin `/api/v1/usuarios/` (crear/reset password/reset MFA/activar/desactivar, guardas self/último-admin), revocación de refresh, `POST /api/v1/auth/password/change/` (`password_change_required`), auditoría de sesión/eventos, comando `resetear_mfa`. ruff/makemigrations check OK; pytest unit 17 passed, `not system` 67 passed.
 - **T-002 FASE B (frontend):** flujo de cambio obligatorio en `LoginPage`/`PasswordChangeStep`; feature `usuarios` (lista con filtros/búsqueda/paginación/acciones, crear/editar), `TempPasswordModal` y `ConfirmResetMfaDialog` (temporal solo en estado local, mutaciones `gcTime: 0` + `reset()`, respuestas `no-store`), `DataTable`/`ConfirmDialog` compartidos, `ProtectedRoute` con guardia `roles` y rutas `/usuarios*` solo ADMINISTRADOR, `AppShell` sin `var(--surface)`. Actualizada skill `frontend-design-system` según `tokens.css`. Vitest 28/28, lint/typecheck OK.
 - **T-004 Fase D (frontend):** pantallas de activos y matriz de pruebas cerrada (esquemas Zod, lista MSW, formulario marca→modelo, crear/editar, 400 por serial, roles, smoke `/activos`). 65 Vitest, lint/typecheck OK.
-- **T-006a (mantenimientos preventivos):** app `mantenimientos` (`Mantenimiento` + `HistoricalMantenimiento`, migración `0001`), situación derivada sin cron y reprogramación con evidencia inmutable (ADR-016), auditoría `MANTENIMIENTO_*`, API `/api/v1/mantenimientos/` (`resumen`, `calendario`, `tecnicos`, `completar`, `reprogramar`, `cancelar`, `historial`) y UI `/mantenimientos` (pestañas Calendario/Lista, franja KPI de 12 meses, chips por situación, detalle, diálogos y pruebas MSW). Backend 35 unit + 164 `not system`; frontend 84 Vitest; ruff/typecheck OK.
+- **T-006a (mantenimientos preventivos):** app `mantenimientos` (`Mantenimiento` + `HistoricalMantenimiento`, migración `0001`), situación derivada sin cron y reprogramación con evidencia inmutable (ADR-016), auditoría `MANTENIMIENTO_*`, API `/api/v1/mantenimientos/` (`resumen`, `calendario`, `tecnicos`, `completar`, `reprogramar`, `cancelar`, `historial`) y UI `/mantenimientos` (pestañas Calendario/Lista, franja KPI de 12 meses, chips por situación, detalle, diálogos y pruebas MSW). Backend 35 unit + 164 `not system`; frontend 84 Vitest; ruff/typecheck OK. Datos de prueba cargados en dev con `seed_mantenimientos_dev` (32 registros de 2026: completados, vencidos, incumplidos y pendientes).
+- **T-006a correctivos (ADR-017):** `fecha_seguimiento` en `Mantenimiento` (migración `0002`), `POST /api/v1/mantenimientos/correctivos/` y filtro `?tipo=`, registro directo `COMPLETADO` que no altera KPI/calendario preventivo; pestaña **Correctivos** en `/mantenimientos` con lista y diálogo (equipo, qué pasó, fecha evento, seguimiento, técnico). Pruebas: 7 integración correctivos + seed; frontend 88 Vitest; ruff/lint/typecheck OK. Seed añade 3 correctivos de ejemplo. Los listados/selects de equipos (Activos y mantenimientos) filtran `is_active=true` y `estado_no=DADO_DE_BAJA`.
+- **Dashboard analítico (ADR-018, avance de T-011):** app `dashboard` con `GET /api/v1/dashboard/resumen/` (KPIs de inventario, valor, cumplimiento preventivo anual y mensual, próximos 14 días, vencidos con días de atraso, correctivos de 30 días y costo del año) calculado en `selectors.py`; admin/técnico reciben mantenimiento y costos, el usuario responsable solo inventario. UI `/dashboard` rediseñada con alertas operativas, KPIs, gráfica mensual apilada, distribución por estado/categoría/marca y listas accionables; se retiró "Registrar Activo". Pruebas: 5 integración backend, 6 Vitest frontend; ruff/lint/typecheck OK.
+- **Licencias T-007 parcial (ADR-019):** app `licencias_garantias` (`Proveedor`, `Licencia`, históricos, migración `0001`), estado de renovación derivado (VIGENTE/POR_VENCER/VENCIDA/INACTIVA, umbral 30 días) sin campo almacenado, acciones de auditoría `LICENCIA_*` (migración `auditoria/0006`), API `/api/v1/licencias/` solo ADMINISTRADOR (`resumen` con costo anualizado, `proveedores`, `renovar`, `inactivar`, `reactivar`, filtros/búsqueda/orden/paginación) y comando `seed_licencias_dev`. UI `/licencias`: KPIs, alertas de vencidas/por vencer, filtros por proveedor/periodicidad/estado, tabla con paginación, crear/editar y diálogo de renovación. Pruebas: 23 backend, 15 Vitest; ruff/lint/typecheck OK. Garantías pendientes.
 
 ## Backlog (cada tarea = módulo completo: backend + frontend + pruebas)
 | ID | Alcance | Depende de |
@@ -32,7 +35,7 @@
 | T-012 | Backup diario de BD (RNF004), pruebas de sistema E2E, endurecimiento | todas |
 
 ## Decisiones pendientes del usuario
-- [ ] Aprobar o ajustar la propuesta normalizada de `DATA_MODEL.md` (bloquea T-003).
+- [ ] Aprobar o ajustar el resto de `DATA_MODEL.md`; `Proveedor` y `Licencia` ya están aprobados para T-007 licencias. Garantías y `LicenciaActivo` siguen pendientes (ADR-019).
 - [ ] ¿El Usuario Responsable puede ver sus activos asignados? (los RF no lo definen; se propone que sí, solo lectura).
 - [ ] "Control de actualizaciones" aparece en el alcance pero no tiene RF ni tabla: definir o descartar.
 - [ ] ¿Quién recibe las alertas (solo Admin/Técnico según RF015)?
@@ -46,8 +49,8 @@
 - `Ubicacion` (catálogo) queda sin uso por Activo en T-004 (la ubicación efectiva se deriva de la asignación en T-005). No borrar; reutilizar en T-005.
 
 ## Registro de sesiones (solo las últimas 5, una línea c/u)
-- 2026-11-09: T-001 FASE A completada. Backend esqueleto + autenticación TOTP. 19/19 tests. Sin Docker (local).
-- 2026-11-10: T-001 FASE B completada. Frontend React 19 + Auth TOTP + Layout AppShell. 18/18 tests. Typecheck & lint 0 errores.
 - 2026-11-12: T-002 FASE A commiteada por usuario (usuarios/auditoría/auth). ruff/migrations OK, 17 unit + 67 not-system passed.
 - 2026-11-12: T-002 FASE B completada (cambio obligatorio, gestión usuarios UI, docs/ADRs). Frontend lint/typecheck OK, 28/28 Vitest.
-- 2026-11-24: T-004 Fase D pruebas y T-006a preventivos (backend+frontend) completos. Backend 35 unit/164 not-system; frontend 84 Vitest; ruff/typecheck OK.
+- 2026-11-24: T-004 Fase D pruebas y T-006a preventivos (backend+frontend) completos. Backend 35 unit/164 not-system; frontend 84 Vitest; ruff/typecheck OK. Correctivos básicos añadidos (pestaña, API y seed); frontend 88 Vitest.
+- 2026-11-24: Dashboard analítico (endpoint agregado por rol + UI con KPIs, gráficas y listas accionables; sin "Registrar Activo"). Backend 179 passed; frontend 94 Vitest; ruff/lint/typecheck OK. `npm run build` falla por tipos MSW preexistentes en pruebas.
+- 2026-11-24: Licencias T-007 parcial (Proveedor/Licencia, API por rol admin, UI con KPIs, filtros, renovación y seed de 15 registros; sin Excel). Backend 202 passed; frontend 109 Vitest; ruff/lint/typecheck OK. Garantías pendientes.

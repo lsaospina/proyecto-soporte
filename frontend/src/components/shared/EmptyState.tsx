@@ -15,7 +15,7 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
       alignItems: 'center',
       justifyContent: 'center',
       padding: '48px 24px',
-      backgroundColor: 'var(--surface)',
+      backgroundColor: 'var(--surface-lowest)',
       border: '1px solid var(--border)',
       borderRadius: '8px',
       textAlign: 'center',

@@ -9,7 +9,7 @@ interface FormSectionProps {
 export function FormSection({ title, description, children }: FormSectionProps) {
   return (
     <div style={{
-      backgroundColor: 'var(--surface)',
+      backgroundColor: 'var(--surface-lowest)',
       border: '1px solid var(--border)',
       borderRadius: '8px',
       padding: '24px',

@@ -30,6 +30,15 @@ class AccionAuditoria(models.TextChoices):
     MANTENIMIENTO_COMPLETADO = "MANTENIMIENTO_COMPLETADO", "Mantenimiento completado"
     MANTENIMIENTO_REPROGRAMADO = "MANTENIMIENTO_REPROGRAMADO", "Mantenimiento reprogramado"
     MANTENIMIENTO_CANCELADO = "MANTENIMIENTO_CANCELADO", "Mantenimiento cancelado"
+    MANTENIMIENTO_CORRECTIVO_REGISTRADO = (
+        "MANTENIMIENTO_CORRECTIVO_REGISTRADO",
+        "Mantenimiento correctivo registrado",
+    )
+    LICENCIA_CREADA = "LICENCIA_CREADA", "Licencia creada"
+    LICENCIA_ACTUALIZADA = "LICENCIA_ACTUALIZADA", "Licencia actualizada"
+    LICENCIA_INACTIVADA = "LICENCIA_INACTIVADA", "Licencia inactivada"
+    LICENCIA_REACTIVADA = "LICENCIA_REACTIVADA", "Licencia reactivada"
+    LICENCIA_RENOVADA = "LICENCIA_RENOVADA", "Licencia renovada"
 
 
 class RegistroAuditoria(BaseModel):

@@ -30,7 +30,7 @@
 - `backend/apps/activos/selectors.py` — `listar_activos` (select_related, filtros)
 - `backend/apps/activos/services.py` — crear/actualizar/inactivar/reactivar/cambiar_estado
 - `backend/apps/activos/serializers.py` — ActivoSerializer, ActivoCreateUpdateSerializer
-- `backend/apps/activos/filters.py` — ActivoFilter
+- `backend/apps/activos/filters.py` — `ActivoFilter` (incluye `estado_no` para excluir `DADO_DE_BAJA`)
 - `backend/apps/activos/views.py` — ActivoViewSet (list/create/retrieve/partial_update, inactivar/reactivar/historial)
 - `backend/apps/activos/urls.py` — router `/api/v1/activos/`
 - `backend/apps/activos/permissions.py` — `IsActivoAccess`
@@ -42,16 +42,43 @@
 ### App mantenimientos
 - `backend/apps/mantenimientos/models.py` — `Mantenimiento` (activo, tipo, fechas, técnico, costo, estado, `reprogramacion_de`), situación derivada, `HistoricalMantenimiento`
 - `backend/apps/mantenimientos/selectors.py` — `listar_mantenimientos`, `anotar_situacion` (Case/Exists), `resumen_anual`, `calendario_mensual`
-- `backend/apps/mantenimientos/services.py` — programar/completar/reprogramar (mueve 200 / crea evidencia 201)/cancelar + auditoría
-- `backend/apps/mantenimientos/serializers.py` — serializer de lectura, creación y acciones
+- `backend/apps/mantenimientos/services.py` — programar/completar/reprogramar (mueve 200 / crea evidencia 201)/cancelar/registrar correctivo + auditoría
+- `backend/apps/mantenimientos/serializers.py` — serializer de lectura, creación preventiva, correctivo y acciones
 - `backend/apps/mantenimientos/filters.py` — filtros año/mes/situación/técnico
 - `backend/apps/mantenimientos/permissions.py` — `IsMantenimientoAccess` (admin/técnico; cancelar solo admin)
-- `backend/apps/mantenimientos/views.py` — `MantenimientoViewSet` + `resumen`, `calendario`, `tecnicos`, `completar`, `reprogramar`, `cancelar`, `historial`
+- `backend/apps/mantenimientos/views.py` — `MantenimientoViewSet` + `resumen`, `calendario`, `tecnicos`, `correctivos` (POST), `completar`, `reprogramar`, `cancelar`, `historial`
 - `backend/apps/mantenimientos/urls.py` — router `/api/v1/mantenimientos/`
 - `backend/apps/mantenimientos/admin.py` — admin
+- `backend/apps/mantenimientos/management/commands/seed_mantenimientos_dev.py` — seed idempotente del año (DEBUG=True): preventivos (completados, vencidos, incumplidos, pendientes) + 3 correctivos
 - `backend/apps/mantenimientos/migrations/0001_initial.py` — esquema + histórico + constraints
+- `backend/apps/mantenimientos/migrations/0002_historicalmantenimiento_fecha_seguimiento_and_more.py` — `fecha_seguimiento`
 - `backend/apps/mantenimientos/tests/unit/test_mantenimientos_unit.py` — situación derivada y validaciones
 - `backend/apps/mantenimientos/tests/integration/test_mantenimientos_api.py` — permisos, programar/completar/reprogramar/cancelar, resumen, calendario, filtros, auditoría
+- `backend/apps/mantenimientos/tests/integration/test_correctivos_api.py` — correctivo: permisos, fechas, descripción, filtro tipo, KPI excluye correctivos
+- `backend/apps/mantenimientos/tests/integration/test_seed_mantenimientos.py` — guarda DEBUG y seed idempotente
+
+### App licencias_garantias
+- `backend/apps/licencias_garantias/models.py` — `Proveedor`, `Licencia` (+ históricos), `PeriodicidadRenovacion`, `EstadoRenovacion` derivado (umbral 30 días)
+- `backend/apps/licencias_garantias/selectors.py` — listados, filtro por estado de renovación, resumen con costo anualizado y proveedores
+- `backend/apps/licencias_garantias/services.py` — crear/actualizar (proveedor por nombre normalizado), inactivar/reactivar, renovar y auditoría `LICENCIA_*`
+- `backend/apps/licencias_garantias/serializers.py` — lectura con estado/días derivados, escritura con proveedor por nombre y resumen
+- `backend/apps/licencias_garantias/filters.py` — proveedor, periodicidad, estado de renovación, activas y rango de fechas
+- `backend/apps/licencias_garantias/views.py` — `LicenciaViewSet` admin-only (`resumen`, `proveedores`, `renovar`, `inactivar`, `reactivar`)
+- `backend/apps/licencias_garantias/urls.py` — router `/api/v1/licencias/`
+- `backend/apps/licencias_garantias/admin.py` — admin de proveedores y licencias
+- `backend/apps/licencias_garantias/management/commands/seed_licencias_dev.py` — seed idempotente (15 licencias; solo DEBUG)
+- `backend/apps/licencias_garantias/migrations/0001_initial.py` — esquema + históricos + constraints
+- `backend/apps/licencias_garantias/tests/unit/test_licencias_unit.py` — estado derivado y validaciones del serializer
+- `backend/apps/licencias_garantias/tests/integration/test_licencias_api.py` — permisos, CRUD, proveedor implícito, renovación, filtros, resumen y auditoría
+- `backend/apps/licencias_garantias/tests/integration/test_seed_licencias.py` — guarda DEBUG y seed idempotente
+
+### App dashboard
+- `backend/apps/dashboard/selectors.py` — `resumen_dashboard` (KPIs de inventario, cumplimiento preventivo mensual, próximos 14 días, vencidos, correctivos de 30 días, activos sin preventivo y costo anual)
+- `backend/apps/dashboard/serializers.py` — contrato de respuesta anidado del tablero (OpenAPI)
+- `backend/apps/dashboard/permissions.py` — `IsDashboardAccess` (lectura para los 3 roles)
+- `backend/apps/dashboard/views.py` — `DashboardResumenView` GET (alcance por rol: responsable sin mantenimientos/costos)
+- `backend/apps/dashboard/urls.py` — `/api/v1/dashboard/resumen/`
+- `backend/apps/dashboard/tests/integration/test_dashboard_api.py` — permisos por rol, agregados, alertas y caso sin datos
 
 ### App catalogos
 - `backend/apps/catalogos/models.py` — `Sede`, `Ubicacion`, `Categoria`, `Marca`, `ModeloActivo` (is_active, HistoricalRecords)
@@ -141,6 +168,7 @@
 - `ErrorState.tsx` — estado de error con reintento
 - `DataTable.tsx` — tabla genérica reutilizable para listados
 - `ConfirmDialog.tsx` — diálogo de confirmación (acciones destructivas/seguras)
+- `KpiCard.tsx` — tarjeta KPI reutilizable (etiqueta, valor, ayuda, icono y tono semántico)
 
 ### Módulo Autenticación (`frontend/src/features/auth/`)
 - `api/auth.api.ts` — API `/api/v1/auth/` (`login`, `changePassword`, MFA setup/confirm/verify, refresh, logout, me)
@@ -176,18 +204,43 @@
 - `__tests__/UsuariosListPage.test.tsx` — prueba de listado (MSW/mock API + estados básicos)
 
 ### Módulo Mantenimientos (`frontend/src/features/mantenimientos/`)
-- `api/mantenimientos.api.ts` — API `/api/v1/mantenimientos/` (resumen, calendario, técnicos, lista, detalle, historial, crear, completar, reprogramar, cancelar)
+- `api/mantenimientos.api.ts` — API `/api/v1/mantenimientos/` (resumen, calendario, técnicos, lista, detalle, historial, crear, correctivos, completar, reprogramar, cancelar)
 - `types/index.ts` — contratos de mantenimiento, resumen, calendario, historial
 - `schemas/mantenimiento.schema.ts` — Zod de programar/completar/reprogramar/cancelar
 - `utils/fechas.ts` — meses/días en español, `dd/MM/yyyy` y cuadrícula mensual desde lunes
-- `pages/MantenimientosPage.tsx` — pestañas Calendario/Lista, KPI anual, chips por situación, detalle con historial y diálogos de acciones
+- `pages/MantenimientosPage.tsx` — pestañas Calendario/Lista/Correctivos, KPI anual, chips por situación, detalle con historial y diálogos de acciones (incluye registrar correctivo)
 - `__tests__/MantenimientosPage.test.tsx` — MSW: carga/vacío/error, chips, programar, roles, reprogramar 200/201, incumplido, cancelar, filtros
 - `schemas/__tests__/mantenimiento.schema.test.ts` — pruebas Zod
 
+### Módulo Licencias (`frontend/src/features/licencias/`)
+- `api/licencias.api.ts` — API `/api/v1/licencias/` (lista, detalle, resumen, proveedores, crear, actualizar, renovar, inactivar, reactivar)
+- `types/index.ts` — contratos de licencia, resumen y payloads
+- `schemas/licencia.schema.ts` — Zod de alta/edición y renovación (valor opcional, cantidad ≥ 1)
+- `utils/licencias.ts` — etiquetas, variantes de estado, suma de periodos y textos de días
+- `components/campos.ts` — estilo compartido de campos de la feature
+- `components/RenovarLicenciaDialog.tsx` — diálogo de renovación con fecha sugerida y valor opcional
+- `pages/LicenciasPage.tsx` — KPIs, alertas, filtros, tabla con paginación, renovar/inactivar/reactivar
+- `pages/LicenciaFormPage.tsx` — alta/edición en tres secciones con datalist de proveedores
+- `__tests__/LicenciasPage.test.tsx` — MSW: KPIs, filtros, renovación, inactivación, vacío y error
+- `__tests__/LicenciaFormPage.test.tsx` — crear, editar y validación de obligatorios
+- `schemas/__tests__/licencia.schema.test.ts` — validaciones Zod
+- `utils/__tests__/licencias.test.ts` — suma de meses y textos de días
+
 ### Rutas y Vistas
-- `frontend/src/routes/Router.tsx` — rutas; `/usuarios`, `/usuarios/nuevo`, `/usuarios/:id/editar` bajo guardia ADMINISTRADOR; `/activos*` y `/mantenimientos` bajo ADMINISTRADOR/TECNICO
+- `frontend/src/routes/Router.tsx` — rutas; `/usuarios*` y `/licencias*` bajo guardia ADMINISTRADOR; `/activos*` y `/mantenimientos` bajo ADMINISTRADOR/TECNICO
 - `frontend/src/routes/ProtectedRoute.tsx` — guardia de autenticación y roles (redirige a `/dashboard` si rol no permitido)
-- `frontend/src/features/dashboard/pages/DashboardPage.tsx` — dashboard inicial
+- `frontend/src/lib/format.ts` — moneda COP, fechas dd/MM/yyyy, día/mes corto y `aISO`
+- `frontend/src/features/dashboard/api/dashboard.api.ts` — API `/api/v1/dashboard/resumen/`
+- `frontend/src/features/dashboard/hooks/useDashboardResumen.ts` — query con `staleTime` de 60 s para el tablero
+- `frontend/src/features/dashboard/types/index.ts` — contratos del resumen del tablero
+- `frontend/src/features/dashboard/pages/DashboardPage.tsx` — tablero por rol: alertas, KPIs, cumplimiento, próximos/vencidos/correctivos, distribución y últimas adquisiciones
+- `frontend/src/features/dashboard/components/AlertasTablero.tsx` — alertas derivadas (vencidos, incumplidos, próximos 7 días, sin preventivo)
+- `frontend/src/features/dashboard/components/CumplimientoMensual.tsx` — barras apiladas por mes (completados/pendientes/vencidos/incumplidos)
+- `frontend/src/features/dashboard/components/BarrasHorizontales.tsx` — barras de distribución reutilizables
+- `frontend/src/features/dashboard/components/ListaMantenimientos.tsx` — lista compacta con chip de fecha y días restantes/atraso
+- `frontend/src/features/dashboard/components/UltimasAdquisiciones.tsx` — activos recientes con badge de estado
+- `frontend/src/features/dashboard/components/SeccionPanel.tsx` — tarjeta de sección del tablero
+- `frontend/src/features/dashboard/__tests__/DashboardPage.test.tsx` — MSW: KPIs, alertas, rol responsable, error y ausencia de "Registrar activo"
 - `frontend/src/pages/ComingSoonPage.tsx` — placeholder de módulos en backlog
 - `frontend/src/pages/NotFoundPage.tsx` — pantalla 404
 

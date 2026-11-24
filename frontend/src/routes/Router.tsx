@@ -12,6 +12,8 @@ import { ActivosListPage } from '../features/activos/pages/ActivosListPage';
 import { UsuariosListPage } from '../features/usuarios/pages/UsuariosListPage';
 import { UsuarioFormPage } from '../features/usuarios/pages/UsuarioFormPage';
 import { MantenimientosPage } from '../features/mantenimientos/pages/MantenimientosPage';
+import { LicenciasPage } from '../features/licencias/pages/LicenciasPage';
+import { LicenciaFormPage } from '../features/licencias/pages/LicenciaFormPage';
 
 export function Router() {
   return (
@@ -28,6 +30,9 @@ export function Router() {
               <Route path="/usuarios" element={<UsuariosListPage />} />
               <Route path="/usuarios/nuevo" element={<UsuarioFormPage />} />
               <Route path="/usuarios/:id/editar" element={<UsuarioFormPage />} />
+              <Route path="/licencias" element={<LicenciasPage />} />
+              <Route path="/licencias/nueva" element={<LicenciaFormPage />} />
+              <Route path="/licencias/:id/editar" element={<LicenciaFormPage />} />
             </Route>
 
             <Route element={<ProtectedRoute roles={['ADMINISTRADOR', 'TECNICO']} />}>
@@ -38,7 +43,6 @@ export function Router() {
               <Route path="/mantenimientos" element={<MantenimientosPage />} />
             </Route>
 
-            <Route path="/licencias" element={<ComingSoonPage title="Licencias y garantías" />} />
             <Route path="/reportes" element={<ComingSoonPage title="Reportes" />} />
             <Route path="/configuracion" element={<ComingSoonPage title="Configuración" />} />
           </Route>
