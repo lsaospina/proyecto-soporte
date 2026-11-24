@@ -17,6 +17,31 @@ const activo = {
   is_active: true,
 };
 
+const mantenimiento = {
+  id: 1,
+  activo: 1,
+  activo_serial: 'SN1',
+  activo_codigo: 'AST-2026-000001',
+  marca_nombre: 'Dell',
+  modelo_nombre: 'Latitude',
+  categoria_nombre: 'Portátiles',
+  tipo: 'PREVENTIVO',
+  fecha_programada: '2026-11-20',
+  fecha_realizacion: null,
+  tecnico: null,
+  tecnico_nombre: null,
+  costo: null,
+  observacion: '',
+  motivo_cancelacion: '',
+  estado: 'PROGRAMADO',
+  situacion: 'PENDIENTE',
+  es_evidencia: false,
+  reprogramado_como: null,
+  reprogramacion_de: null,
+  created_at: '2026-11-01T10:00:00Z',
+  updated_at: '2026-11-01T10:00:00Z',
+};
+
 const server = setupServer(
   http.get(/\/api\/v1\/auth\/me\/$/, () =>
     HttpResponse.json({
@@ -30,6 +55,29 @@ const server = setupServer(
   http.get(/\/api\/v1\/activos\/$/, () =>
     HttpResponse.json({ count: 1, next: null, previous: null, results: [activo] }),
   ),
+  http.get(/\/api\/v1\/mantenimientos\/resumen\/$/, () =>
+    HttpResponse.json({
+      anio: 2026,
+      hoy: '2026-11-15',
+      meses: Array.from({ length: 12 }, (_, i) => ({
+        mes: i + 1,
+        agendados: i === 10 ? 1 : 0,
+        completados: 0,
+        vencidos: 0,
+        incumplidos: 0,
+        porcentaje_cumplimiento: 0,
+      })),
+    }),
+  ),
+  http.get(/\/api\/v1\/mantenimientos\/calendario\/$/, () =>
+    HttpResponse.json({
+      anio: 2026,
+      mes: 11,
+      hoy: '2026-11-15',
+      mantenimientos: [mantenimiento],
+    }),
+  ),
+  http.get(/\/api\/v1\/mantenimientos\/tecnicos\/$/, () => HttpResponse.json([])),
 );
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
@@ -61,5 +109,31 @@ describe('App smoke /activos', () => {
     expect(screen.getByRole('link', { name: /Activos/ })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /Catálogos/ })).not.toBeInTheDocument();
     expect(screen.queryByText('Ha ocurrido un error inesperado.')).not.toBeInTheDocument();
+  });
+
+  it('ADMINISTRADOR ve contenido real de /mantenimientos', async () => {
+    window.history.pushState({}, '', '/mantenimientos');
+    render(<App />);
+    expect(await screen.findByText('AST-2026-000001')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Mantenimientos' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Mantenimientos/ })).toBeInTheDocument();
+  });
+
+  it('TECNICO ve contenido real de /mantenimientos', async () => {
+    rol = 'TECNICO';
+    window.history.pushState({}, '', '/mantenimientos');
+    render(<App />);
+    expect(await screen.findByText('AST-2026-000001')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Mantenimientos' })).toBeInTheDocument();
+  });
+
+  it('USUARIO_RESPONSABLE se redirige fuera de /mantenimientos', async () => {
+    rol = 'USUARIO_RESPONSABLE';
+    window.history.pushState({}, '', '/mantenimientos');
+    render(<App />);
+    expect(
+      await screen.findByRole('heading', { name: /Centro de Comando/ }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Mantenimientos' })).not.toBeInTheDocument();
   });
 });

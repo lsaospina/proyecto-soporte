@@ -26,6 +26,10 @@ class AccionAuditoria(models.TextChoices):
     ACTIVO_ACTUALIZADO = "ACTIVO_ACTUALIZADO", "Activo actualizado"
     ACTIVO_INACTIVADO = "ACTIVO_INACTIVADO", "Activo inactivado"
     ACTIVO_REACTIVADO = "ACTIVO_REACTIVADO", "Activo reactivado"
+    MANTENIMIENTO_PROGRAMADO = "MANTENIMIENTO_PROGRAMADO", "Mantenimiento programado"
+    MANTENIMIENTO_COMPLETADO = "MANTENIMIENTO_COMPLETADO", "Mantenimiento completado"
+    MANTENIMIENTO_REPROGRAMADO = "MANTENIMIENTO_REPROGRAMADO", "Mantenimiento reprogramado"
+    MANTENIMIENTO_CANCELADO = "MANTENIMIENTO_CANCELADO", "Mantenimiento cancelado"
 
 
 class RegistroAuditoria(BaseModel):

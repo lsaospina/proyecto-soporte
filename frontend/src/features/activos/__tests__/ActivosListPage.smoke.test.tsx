@@ -19,7 +19,7 @@ const activo = {
   codigo_qr: 'AST-2024-000001',
   marca_nombre: 'Dell',
   modelo_nombre: 'Latitude',
-  categoria_nombre: 'PortÃ¡tiles',
+  categoria_nombre: 'Portátiles',
   estado: 'DISPONIBLE',
   is_active: true,
 };
@@ -61,7 +61,7 @@ describe('ActivosListPage', () => {
     expect(screen.getAllByText('Dell / Latitude').length).toBeGreaterThan(0);
   });
 
-  it('vacÃ­o', async () => {
+  it('vacío', async () => {
     server.use(
       http.get(/\/api\/v1\/activos\/$/, () =>
         HttpResponse.json({ count: 0, next: null, previous: null, results: [] }),
@@ -82,7 +82,7 @@ describe('ActivosListPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('No se pudieron cargar los activos.');
   });
 
-  it('bÃºsqueda y filtro de estado envÃ­an los parÃ¡metros correctos', async () => {
+  it('búsqueda y filtro de estado envían los parámetros correctos', async () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByText('SN1');
@@ -112,4 +112,3 @@ describe('ActivosListPage', () => {
     expect(screen.getByRole('button', { name: 'Reactivar' })).toBeInTheDocument();
   });
 });
-

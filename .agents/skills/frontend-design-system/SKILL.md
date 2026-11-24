@@ -66,6 +66,7 @@ Toda vista con datos remotos maneja: carga (`LoadingSkeleton`), vacío (`EmptySt
 
 ## Mapa de estados → `StatusBadge`
 Operativo/Vigente → éxito · En mantenimiento/Por vencer → advertencia · Crítico/Vencido/Dado de baja → peligro · En bodega/Programado → info · Sin asignar/Inactivo → neutro.
+Mantenimiento: `PENDIENTE` → info · `COMPLETADO` → éxito · `VENCIDO` → advertencia (peligro suave) · `INCUMPLIDO` → peligro **sólido con candado (`Lock`) y etiqueta "Evidencia"**; nunca se elimina · `CANCELADO` → neutro. La situación y "hoy" vienen del backend; no se recalculan en el componente.
 
 ## Texto y accesibilidad
 Interfaz en español neutro, sentence case. Botones con verbo ("Registrar activo", "Guardar cambios"). Labels asociados, foco visible,

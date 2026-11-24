@@ -1,10 +1,10 @@
 # STATE — estado vivo del proyecto
 
 > El agente actualiza este archivo al cerrar cada tarea. Mantenerlo corto (no es un historial completo).
-> Última actualización: 2026-11-12 · por: agente (cierre T-002 FASE B)
+> Última actualización: 2026-11-24 · por: agente (T-006a preventivo backend+frontend)
 
 ## Tarea actual
-**T-004 — Activos (Fase C backend COMPLETA; Fase D frontend pendiente).** Fase C: app `activos`, migración, ACTIVO_* en auditoría, seed ampliado (40 activos), tests (22 passed). Siguiente: Fase D frontend (espera orden).
+**T-006a — Mantenimientos preventivos (backend + frontend COMPLETOS).** Calendario anual por mes, KPI agendados/realizados/%, situación derivada, completar, reprogramar (mueve 200 / crea evidencia 201) y cancelar (admin). Siguiente: T-006 correctivos/incidentes + repuestos (RepuestoMantenimiento sigue PENDIENTE).
 
 ## Hecho
 - Documento de análisis y diseño (docx), mockups, diccionario de datos (baseline). Repo y documentación para agentes instalada.
@@ -12,6 +12,8 @@
 - **T-001 FASE B (frontend):** Vite + React 19 + TS + Tailwind 4, tokens CSS, cliente Axios con refresh HttpOnly, TanStack Query, auth (login/MFA setup+verify+recovery), `AppShell`, rutas protegidas por rol, componentes compartidos base. 18/18 tests Vitest, lint/typecheck OK.
 - **T-002 FASE A (backend, commiteada):** app `auditoria` (`RegistroAuditoria`, admin solo lectura), `Usuario.debe_cambiar_password`, normalización/`UniqueConstraint(Lower(email))` (migraciones `usuarios/0002-0004`, `auditoria/0001`), CRUD admin `/api/v1/usuarios/` (crear/reset password/reset MFA/activar/desactivar, guardas self/último-admin), revocación de refresh, `POST /api/v1/auth/password/change/` (`password_change_required`), auditoría de sesión/eventos, comando `resetear_mfa`. ruff/makemigrations check OK; pytest unit 17 passed, `not system` 67 passed.
 - **T-002 FASE B (frontend):** flujo de cambio obligatorio en `LoginPage`/`PasswordChangeStep`; feature `usuarios` (lista con filtros/búsqueda/paginación/acciones, crear/editar), `TempPasswordModal` y `ConfirmResetMfaDialog` (temporal solo en estado local, mutaciones `gcTime: 0` + `reset()`, respuestas `no-store`), `DataTable`/`ConfirmDialog` compartidos, `ProtectedRoute` con guardia `roles` y rutas `/usuarios*` solo ADMINISTRADOR, `AppShell` sin `var(--surface)`. Actualizada skill `frontend-design-system` según `tokens.css`. Vitest 28/28, lint/typecheck OK.
+- **T-004 Fase D (frontend):** pantallas de activos y matriz de pruebas cerrada (esquemas Zod, lista MSW, formulario marca→modelo, crear/editar, 400 por serial, roles, smoke `/activos`). 65 Vitest, lint/typecheck OK.
+- **T-006a (mantenimientos preventivos):** app `mantenimientos` (`Mantenimiento` + `HistoricalMantenimiento`, migración `0001`), situación derivada sin cron y reprogramación con evidencia inmutable (ADR-016), auditoría `MANTENIMIENTO_*`, API `/api/v1/mantenimientos/` (`resumen`, `calendario`, `tecnicos`, `completar`, `reprogramar`, `cancelar`, `historial`) y UI `/mantenimientos` (pestañas Calendario/Lista, franja KPI de 12 meses, chips por situación, detalle, diálogos y pruebas MSW). Backend 35 unit + 164 `not system`; frontend 84 Vitest; ruff/typecheck OK.
 
 ## Backlog (cada tarea = módulo completo: backend + frontend + pruebas)
 | ID | Alcance | Depende de |
@@ -36,7 +38,6 @@
 - [ ] ¿Quién recibe las alertas (solo Admin/Técnico según RF015)?
 
 ## Ideas y deuda (fuera de alcance actual)
-- T-004 Fase D: pruebas cerradas (schemas, lista MSW, formulario, rol, smoke de /activos).
 - `resetear_mfa` (comando de gestión) como vía de emergencia si el único admin pierde su dispositivo (sin guarda de auto-reset; usar con control operativo).
 - Revocación inmediata de access tokens tras reset/cambio de contraseña/MFA (p. ej. token version o `password_changed_at`); hoy el refresh se revoca pero el access puede vivir hasta expirar (≤15 min), salvo inactivación que se rechaza de inmediato.
 - Retención/depuración y política de consulta de la tabla `RegistroAuditoria` (crecimiento, archivado, índices/particionado según volumen); UI de consulta de auditoría fuera de alcance.
@@ -49,3 +50,4 @@
 - 2026-11-10: T-001 FASE B completada. Frontend React 19 + Auth TOTP + Layout AppShell. 18/18 tests. Typecheck & lint 0 errores.
 - 2026-11-12: T-002 FASE A commiteada por usuario (usuarios/auditoría/auth). ruff/migrations OK, 17 unit + 67 not-system passed.
 - 2026-11-12: T-002 FASE B completada (cambio obligatorio, gestión usuarios UI, docs/ADRs). Frontend lint/typecheck OK, 28/28 Vitest.
+- 2026-11-24: T-004 Fase D pruebas y T-006a preventivos (backend+frontend) completos. Backend 35 unit/164 not-system; frontend 84 Vitest; ruff/typecheck OK.

@@ -46,6 +46,7 @@ LOCAL_APPS = [
     "apps.auditoria.apps.AuditoriaConfig",
     "apps.catalogos.apps.CatalogosConfig",
     "apps.activos.apps.ActivosConfig",
+    "apps.mantenimientos.apps.MantenimientosConfig",
     "simple_history",
 ]
 

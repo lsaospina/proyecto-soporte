@@ -39,6 +39,20 @@
 - `backend/apps/activos/tests/unit/test_activos_unit.py` — normalización, transiciones, fecha futura
 - `backend/apps/activos/tests/integration/test_activos_api.py` — permisos, unicidad, reglas, historial, auditoría, filtros, num queries
 
+### App mantenimientos
+- `backend/apps/mantenimientos/models.py` — `Mantenimiento` (activo, tipo, fechas, técnico, costo, estado, `reprogramacion_de`), situación derivada, `HistoricalMantenimiento`
+- `backend/apps/mantenimientos/selectors.py` — `listar_mantenimientos`, `anotar_situacion` (Case/Exists), `resumen_anual`, `calendario_mensual`
+- `backend/apps/mantenimientos/services.py` — programar/completar/reprogramar (mueve 200 / crea evidencia 201)/cancelar + auditoría
+- `backend/apps/mantenimientos/serializers.py` — serializer de lectura, creación y acciones
+- `backend/apps/mantenimientos/filters.py` — filtros año/mes/situación/técnico
+- `backend/apps/mantenimientos/permissions.py` — `IsMantenimientoAccess` (admin/técnico; cancelar solo admin)
+- `backend/apps/mantenimientos/views.py` — `MantenimientoViewSet` + `resumen`, `calendario`, `tecnicos`, `completar`, `reprogramar`, `cancelar`, `historial`
+- `backend/apps/mantenimientos/urls.py` — router `/api/v1/mantenimientos/`
+- `backend/apps/mantenimientos/admin.py` — admin
+- `backend/apps/mantenimientos/migrations/0001_initial.py` — esquema + histórico + constraints
+- `backend/apps/mantenimientos/tests/unit/test_mantenimientos_unit.py` — situación derivada y validaciones
+- `backend/apps/mantenimientos/tests/integration/test_mantenimientos_api.py` — permisos, programar/completar/reprogramar/cancelar, resumen, calendario, filtros, auditoría
+
 ### App catalogos
 - `backend/apps/catalogos/models.py` — `Sede`, `Ubicacion`, `Categoria`, `Marca`, `ModeloActivo` (is_active, HistoricalRecords)
 - `backend/apps/catalogos/utils.py` — `normalizar_nombre`
@@ -55,8 +69,7 @@
 - `backend/apps/catalogos/tests/integration/test_catalogos_api.py` — permisos, unicidad CI, guardas, PROTECT, historial, auditoría, num queries, IntegrityError
 
 ### App auditoria
-- `backend/apps/auditoria/models.py` — `AccionAuditoria` (TextChoices) y `RegistroAuditoria` (eventos de acceso/gestión, sin JSON)
-- `backend/apps/auditoria/services.py` — `registrar_evento(...)` (escritura única de auditoría)
+- `backend/apps/auditoria/models.py` — `AccionAuditoria` (TextChoices) y `RegistroAuditoria` (eventos de acceso/gestión, sin JSON)- `backend/apps/auditoria/services.py` — `registrar_evento(...)` (escritura única de auditoría)
 - `backend/apps/auditoria/utils.py` — `get_client_ip(request)` y `sanitizar_entidad_id(valor)`
 - `backend/apps/auditoria/admin.py` — `RegistroAuditoriaAdmin` solo lectura
 - `backend/apps/auditoria/migrations/0001_initial.py` — esquema inicial de auditoría
@@ -162,8 +175,17 @@
 - `__tests__/TempPasswordModal.test.tsx` — prueba modal de contraseña temporal
 - `__tests__/UsuariosListPage.test.tsx` — prueba de listado (MSW/mock API + estados básicos)
 
+### Módulo Mantenimientos (`frontend/src/features/mantenimientos/`)
+- `api/mantenimientos.api.ts` — API `/api/v1/mantenimientos/` (resumen, calendario, técnicos, lista, detalle, historial, crear, completar, reprogramar, cancelar)
+- `types/index.ts` — contratos de mantenimiento, resumen, calendario, historial
+- `schemas/mantenimiento.schema.ts` — Zod de programar/completar/reprogramar/cancelar
+- `utils/fechas.ts` — meses/días en español, `dd/MM/yyyy` y cuadrícula mensual desde lunes
+- `pages/MantenimientosPage.tsx` — pestañas Calendario/Lista, KPI anual, chips por situación, detalle con historial y diálogos de acciones
+- `__tests__/MantenimientosPage.test.tsx` — MSW: carga/vacío/error, chips, programar, roles, reprogramar 200/201, incumplido, cancelar, filtros
+- `schemas/__tests__/mantenimiento.schema.test.ts` — pruebas Zod
+
 ### Rutas y Vistas
-- `frontend/src/routes/Router.tsx` — rutas; `/usuarios`, `/usuarios/nuevo`, `/usuarios/:id/editar` bajo guardia ADMINISTRADOR
+- `frontend/src/routes/Router.tsx` — rutas; `/usuarios`, `/usuarios/nuevo`, `/usuarios/:id/editar` bajo guardia ADMINISTRADOR; `/activos*` y `/mantenimientos` bajo ADMINISTRADOR/TECNICO
 - `frontend/src/routes/ProtectedRoute.tsx` — guardia de autenticación y roles (redirige a `/dashboard` si rol no permitido)
 - `frontend/src/features/dashboard/pages/DashboardPage.tsx` — dashboard inicial
 - `frontend/src/pages/ComingSoonPage.tsx` — placeholder de módulos en backlog
