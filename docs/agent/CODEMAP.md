@@ -177,11 +177,11 @@
 - `frontend/src/styles/globals.css` — estilos globales, tipografía y resets
 
 ### API Layer
-- `frontend/src/api/client.ts` — cliente Axios centralizado con Bearer JWT y refresco automático 401 por cola
+- `frontend/src/api/client.ts` — cliente Axios centralizado con Bearer JWT y refresco automático 401 por cola; `Content-Type` lo gestiona axios (JSON/multipart con boundary)
 - `frontend/src/api/query-client.ts` — cliente TanStack Query con defaults (stale/retry/refetch)
 
 ### Componentes Compartidos (`frontend/src/components/shared/`)
-- `AppShell.tsx` — layout (sidebar/topbar), navegación filtrada por rol y logout
+- `AppShell.tsx` — layout (sidebar/topbar), navegación filtrada por rol (incluye Bajas; sin Reportes/Configuración) y logout
 - `PageHeader.tsx` — encabezado con breadcrumbs, título/subtítulo y acciones
 - `FormField.tsx` — campo con etiqueta, requerido, helpText y error accesible
 - `FormSection.tsx` — sección contenedora de formularios
@@ -213,6 +213,23 @@
 - `api/catalogos.api.ts` — cliente HTTP catálogos
 - `types/index.ts` — tipos TS de catálogos
 - `pages/CatalogosPage.tsx` — pantalla genérica por pestañas
+
+### Módulo Activos (`frontend/src/features/activos/`)
+- `api/activos.api.ts` — API `/api/v1/activos/` (lista, detalle, historial, crear, editar, inactivar/reactivar)
+- `pages/ActivosListPage.tsx` — inventario con filtros activos/inactivos/todos, búsqueda, columna "Ver detalle" y botón "Registrar activo" (ADMIN/TÉCNICO)
+- `pages/ActivosFormPage.tsx` — alta/edición (marca→modelo, validaciones)
+- `pages/ActivosDetailPage.tsx` — detalle con pestañas Resumen/Asignaciones/Mantenimientos/Incidentes/Documentos/Historial y bloque de garantía
+
+### Módulo Incidentes (`frontend/src/features/incidentes/`)
+- `api/incidentes.api.ts` — API `/api/v1/incidentes/` (listar; consumido por la pestaña Incidentes del detalle)
+
+### Módulo Documentos (`frontend/src/features/documentos/`)
+- `api/documentos.api.ts` — API `/api/v1/documentos/` (listar, subir multipart, descargar, eliminar)
+- `components/DocumentosTab.tsx` — formulario de subida siempre visible + tabla con descargar/eliminar
+
+### Módulo Bajas (`frontend/src/features/bajas/`)
+- `api/bajas.api.ts` — API `/api/v1/bajas/` (listar, registrar)
+- `pages/BajasPage.tsx` — listado con búsqueda/paginación y diálogo "Registrar baja" (activo, fecha, motivo, documento soporte)
 
 ### Módulo Usuarios (`frontend/src/features/usuarios/`)
 - `api/usuarios.api.ts` — API `/api/v1/usuarios/` (listar, CRUD parcial, reset password/MFA, activar/desactivar)
@@ -261,7 +278,7 @@
 - `schemas/__tests__/asignacion.schema.test.ts` — validaciones Zod
 
 ### Rutas y Vistas
-- `frontend/src/routes/Router.tsx` — rutas; `/usuarios*` y `/licencias*` bajo guardia ADMINISTRADOR; `/activos*`, `/asignaciones` y `/mantenimientos` bajo ADMINISTRADOR/TECNICO
+- `frontend/src/routes/Router.tsx` — rutas; `/usuarios*`, `/licencias*` y `/bajas` bajo guardia ADMINISTRADOR; `/activos*`, `/asignaciones` y `/mantenimientos` bajo ADMINISTRADOR/TECNICO
 - `frontend/src/routes/ProtectedRoute.tsx` — guardia de autenticación y roles (redirige a `/dashboard` si rol no permitido)
 - `frontend/src/lib/format.ts` — moneda COP, fechas dd/MM/yyyy, día/mes corto y `aISO`
 - `frontend/src/features/dashboard/api/dashboard.api.ts` — API `/api/v1/dashboard/resumen/`

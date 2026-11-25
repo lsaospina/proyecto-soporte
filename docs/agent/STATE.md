@@ -1,10 +1,10 @@
 # STATE — estado vivo del proyecto
 
 > El agente actualiza este archivo al cerrar cada tarea. Mantenerlo corto (no es un historial completo).
-> Última actualización: 2026-11-25 · por: agente (RF010/RF008/RF012/RF013)
+> Última actualización: 2026-11-25 · por: agente (RF010/RF008/RF012/RF013/RF014 + ajustes UI)
 
 ## Tarea actual
-**Asignaciones y trazabilidad (T-005) COMPLETO.** Relación activo↔colaborador con una sola asignación abierta, sincronización del estado (`ASIGNADO` al asignar, `DISPONIBLE` al devolver), reasignación con historial completo y auditoría. API `/api/v1/asignaciones/` (lectura ADMIN/TÉCNICO, escritura ADMIN) y menú `/asignaciones` con KPIs, filtros, alta, reasignación y devolución; el activo muestra su responsable actual y su historial de asignaciones. Siguiente: movimientos/ubicaciones (`MovimientoActivo`, pendiente) o garantías/repuestos/incidentes.
+**Módulos RF008/RF010/RF012/RF013/RF014 implementados.** Garantía por plazo en Activo; incidentes; detalle del activo con trazabilidad (pestañas); gestión documental con subida/descarga; y gestión de bajas (admin) que pasa el activo a `DADO_DE_BAJA`. Pendiente: alertas (RF015), reportes (RF017), QR como imagen (RF011) y control de actualizaciones. Migraciones nuevas a aplicar en dev: `activos` 0003/0004, `incidentes` 0001, `documentos` 0001, `bajas` 0001.
 
 ## Hecho
 - Documento de análisis y diseño (docx), mockups, diccionario de datos (baseline). Repo y documentación para agentes instalada.
@@ -24,6 +24,7 @@
 - **RF013 gestión documental (2026-11-25):** app `documentos` (`Documento` + `HistoricalDocumento`, migración `0001`), FileField local con validación de extensión/tamaño, descarga autenticada (`/descargar/`), auditoría `DOCUMENTO_*`, API `/api/v1/documentos/` (ADMIN/TÉCNICO) y pestaña Documentos en el detalle del activo (subir/descargar/eliminar). Se sirve `MEDIA` solo en DEBUG.
 - **Comando `seed_historial_activo` (2026-11-25):** puebla un historial de demostración para un activo (`--codigo AST-2024-000002`): asignaciones, mantenimientos, incidentes y auditoría; idempotente.
 - **RF014 gestión de bajas (2026-11-25):** app `bajas` (`Baja` + `HistoricalBaja`, migración `0001`), OneToOne con `Activo`, documento soporte opcional (FK a `Documento`). Servicio `registrar_baja` valida duplicado/asignación abierta/fecha no futura, pasa el activo a `DADO_DE_BAJA` con historial y audita `BAJA_REGISTRADA`. API `/api/v1/bajas/` (list/retrieve/create) solo ADMINISTRADOR. Frontend: página `/bajas` (lista + alta con activo, fecha, motivo y documento opcional) y menú ADMINISTRADOR.
+- **Ajustes UI (2026-11-25):** botón "Registrar activo" en el listado (ADMIN/TÉCNICO, RF003); menú con "Bajas" y sin "Reportes"/"Configuración"; formulario de documentos siempre visible y subida multipart corregida (Content-Type gestionado por axios); la consulta de documentos se ejecuta al abrir la pestaña.
 - **Pendiente de verificación:** no se pudieron ejecutar `pytest`/`manage.py` desde el agente (permisos de bash); el usuario debe aplicar `python manage.py migrate` (activos 0003/0004, incidentes 0001, documentos 0001, bajas 0001) y correr las suites.
 
 ## Backlog (cada tarea = módulo completo: backend + frontend + pruebas)
@@ -34,10 +35,10 @@
 | T-003 | Catálogos (Sede, Ubicación, Categoría, Marca, Modelo) | T-002, DATA_MODEL aprobado |
 | T-004 | Activos: registro, consulta con filtros, historial (RF003, RF004, RNF008) | T-003 |
 | T-005 | Asignación de responsables + trazabilidad + QR (RF005, RF011, RF012) | T-004 |
-| T-006 | Mantenimientos e incidentes (RF006, RF007, RF008) | T-004 |
-| T-007 | Proveedores, garantías, software y licencias (RF009, RF010) | T-004 |
-| T-008 | Documentos adjuntos (RF013) | T-004 |
-| T-009 | Bajas (RF014) | T-004 |
+| T-006 | Mantenimientos e incidentes (RF006, RF007, RF008) — correctivos e incidentes implementados | T-004 |
+| T-007 | Proveedores, garantías, software y licencias (RF009, RF010) — licencias y garantía en Activo implementadas | T-004 |
+| T-008 | Documentos adjuntos (RF013) — implementado | T-004 |
+| T-009 | Bajas (RF014) — implementado | T-004 |
 | T-010 | Alertas: comando diario + bandeja (RF015) | T-006, T-007 |
 | T-011 | Dashboard y reportes PDF/Excel (RF016, RF017) | T-004..T-007 |
 | T-012 | Backup diario de BD (RNF004), pruebas de sistema E2E, endurecimiento | todas |

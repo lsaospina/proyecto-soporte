@@ -44,7 +44,7 @@ Elección del usuario: `[ ] A   [ ] B   [ ] A con ajustes: ________`
 | MovimientoActivo (Trazabilidad) | activo FK, tipo_movimiento, fecha_movimiento, usuario FK, ubicacion_origen FK, ubicacion_destino FK, observacion | Solo inserción (append-only) | PENDIENTE (T-005 cubre responsables con AsignacionActivo) |
 | Mantenimiento | activo FK, tipo (PREVENTIVO/CORRECTIVO), fecha_programada, fecha_realizacion, fecha_seguimiento (opc.), tecnico FK, costo, observacion, motivo_cancelacion, estado (PROGRAMADO/COMPLETADO/CANCELADO), reprogramacion_de (OneToOne self, opc.) | CHECK costo ≥ 0; índices fecha_programada/estado; situación (PENDIENTE/VENCIDO/INCUMPLIDO/COMPLETADO/CANCELADO) **derivada**, no almacenada; INCUMPLIDO = evidencia inmutable. CORRECTIVO = registro directo (evento + seguimiento) que no entra en KPI/calendario preventivo | APROBADO (T-006a) |
 | RepuestoMantenimiento | mantenimiento FK, descripcion, cantidad, costo_unitario | CASCADE desde Mantenimiento; CHECK cantidad > 0 | PENDIENTE |
-| Incidente | activo FK, reportado_por FK, fecha, descripcion, estado | | PENDIENTE |
+| Incidente | activo FK, reportado_por FK, fecha, descripcion, estado | ADMIN/TÉCNICO todo; USUARIO_RESPONSABLE crea/ve los propios | APROBADO (RF008) |
 | Proveedor | nombre, contacto | nombre único CI. is_active | APROBADO (T-007 licencias) |
 | Garantia | activo FK, proveedor FK, fecha_inicio, fecha_fin, condiciones | CHECK fecha_fin > fecha_inicio | PENDIENTE (segunda fase T-007) |
 | Software | nombre, fabricante | nombre único. Nueva | PENDIENTE — no se implementa: `Licencia.servicio` guarda el nombre (ADR-019) |
@@ -115,3 +115,15 @@ Elección del usuario: `[ ] A   [ ] B   [ ] A con ajustes: ________`
 | Modelo | App | Campos/Definición | Notas |
 |---|---|---|---|
 | `Baja` | bajas | `activo` OneToOne PROTECT (`related_name="baja"`), `fecha` DateField (no futura), `motivo` texto, `autorizado_por` FK Usuario PROTECT, `documento` FK Documento PROTECT nulo | `HistoricalBaja`. Al registrar: el activo pasa a `DADO_DE_BAJA` (con historial) y se audita `BAJA_REGISTRADA`; se bloquea si ya existe baja o si hay asignación abierta. Endpoints `/api/v1/bajas/` (list/retrieve/create). Solo ADMINISTRADOR (RF014). Migración `bajas/0001`. |
+
+### Aprobado e implementado RF008 — incidentes (APROBADO 2026-11-25)
+
+| Modelo | App | Campos/Definición | Notas |
+|---|---|---|---|
+| `Incidente` | incidentes | `activo` FK PROTECT, `reportado_por` FK Usuario PROTECT, `fecha` DateField (default hoy), `descripcion` texto, `estado` (REPORTADO/EN_PROCESO/RESUELTO/CERRADO/CANCELADO) | `HistoricalIncidente`. Endpoints `/api/v1/incidentes/` (list/create y `cambiar_estado`); ADMIN/TÉCNICO todo, USUARIO_RESPONSABLE crea y ve los propios. Auditoría `INCIDENTE_*`. Migración `incidentes/0001`. |
+
+### Aprobado e implementado RF010 — garantía en Activo (APROBADO 2026-11-25)
+
+| Modelo/Campo | App | Campos/Definición | Notas |
+|---|---|---|---|
+| `Activo.plazo_garantia_meses` | activos | `PositiveIntegerField` nulo (plazo en meses) | `fecha_vencimiento_garantia` y `estado_garantia` (SIN_GARANTIA/VIGENTE/POR_VENCER/VENCIDA) derivados de `fecha_adquisicion` + plazo (umbral 30 días). Migraciones `activos/0003` (tabla) y `0004` (histórico). |
