@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { Plus } from 'lucide-react';
 import { PageHeader } from '../../../components/shared/PageHeader';
 import { DataTable } from '../../../components/shared/DataTable';
 import { activosApi } from '../api/activos.api';
@@ -20,6 +21,7 @@ function paramsFor(estado: EstadoFiltro, search: string): Record<string, unknown
 export function ActivosListPage() {
   const { user } = useAuth();
   const esAdmin = user?.rol === 'ADMINISTRADOR';
+  const puedeCrear = user?.rol === 'ADMINISTRADOR' || user?.rol === 'TECNICO';
   const navigate = useNavigate();
   const [estado, setEstado] = useState<EstadoFiltro>('activos');
   const [search, setSearch] = useState('');
@@ -98,7 +100,33 @@ export function ActivosListPage() {
 
   return (
     <div>
-      <PageHeader title="Activos" subtitle="Inventario de activos tecnológicos" />
+      <PageHeader
+        title="Activos"
+        subtitle="Inventario de activos tecnológicos"
+        actions={
+          puedeCrear ? (
+            <button
+              type="button"
+              onClick={() => navigate('/activos/nuevo')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '8px 14px',
+                borderRadius: 'var(--radius-control)',
+                backgroundColor: 'var(--primary)',
+                color: 'var(--text-inverse)',
+                fontSize: 13,
+                fontWeight: 600,
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <Plus size={14} /> Registrar activo
+            </button>
+          ) : undefined
+        }
+      />
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
         <input
