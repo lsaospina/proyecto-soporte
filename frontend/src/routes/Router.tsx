@@ -15,6 +15,7 @@ import { MantenimientosPage } from '../features/mantenimientos/pages/Mantenimien
 import { LicenciasPage } from '../features/licencias/pages/LicenciasPage';
 import { LicenciaFormPage } from '../features/licencias/pages/LicenciaFormPage';
 import { AsignacionesPage } from '../features/asignaciones/pages/AsignacionesPage';
+import { BajasPage } from '../features/bajas/pages/BajasPage';
 
 export function Router() {
   return (
@@ -34,6 +35,7 @@ export function Router() {
               <Route path="/licencias" element={<LicenciasPage />} />
               <Route path="/licencias/nueva" element={<LicenciaFormPage />} />
               <Route path="/licencias/:id/editar" element={<LicenciaFormPage />} />
+              <Route path="/bajas" element={<BajasPage />} />
             </Route>
 
             <Route element={<ProtectedRoute roles={['ADMINISTRADOR', 'TECNICO']} />}>

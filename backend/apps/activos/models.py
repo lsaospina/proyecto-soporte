@@ -1,3 +1,6 @@
+from calendar import monthrange
+from datetime import date
+
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -13,6 +16,24 @@ class EstadoActivo(models.TextChoices):
     ASIGNADO = "ASIGNADO", "Asignado"
     EN_MANTENIMIENTO = "EN_MANTENIMIENTO", "En mantenimiento"
     DADO_DE_BAJA = "DADO_DE_BAJA", "Dado de baja"
+
+
+class EstadoGarantia(models.TextChoices):
+    SIN_GARANTIA = "SIN_GARANTIA", "Sin garantía"
+    VIGENTE = "VIGENTE", "Vigente"
+    POR_VENCER = "POR_VENCER", "Por vencer"
+    VENCIDA = "VENCIDA", "Vencida"
+
+
+DIAS_POR_VENCER_GARANTIA = 30
+
+
+def sumar_meses(fecha: date, meses: int) -> date:
+    mes = fecha.month - 1 + meses
+    anio = fecha.year + mes // 12
+    mes = mes % 12 + 1
+    dia = min(fecha.day, monthrange(anio, mes)[1])
+    return date(anio, mes, dia)
 
 
 class Activo(BaseModel):
@@ -31,7 +52,31 @@ class Activo(BaseModel):
     almacenamiento_gb = models.PositiveIntegerField(null=True, blank=True)
     direccion_mac = models.CharField(max_length=17, blank=True, default="")
     observaciones = models.TextField(blank=True, default="")
+    plazo_garantia_meses = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Plazo de garantía en meses (ej. 12, 6).",
+    )
     is_active = models.BooleanField(default=True)
+
+    @property
+    def fecha_vencimiento_garantia(self) -> date | None:
+        if self.plazo_garantia_meses is None:
+            return None
+        return sumar_meses(self.fecha_adquisicion, self.plazo_garantia_meses)
+
+    @property
+    def estado_garantia(self) -> str:
+        if self.plazo_garantia_meses is None:
+            return EstadoGarantia.SIN_GARANTIA
+        vencimiento = self.fecha_vencimiento_garantia
+        hoy = timezone.localdate()
+        dias = (vencimiento - hoy).days
+        if dias < 0:
+            return EstadoGarantia.VENCIDA
+        if dias <= DIAS_POR_VENCER_GARANTIA:
+            return EstadoGarantia.POR_VENCER
+        return EstadoGarantia.VIGENTE
 
     history = HistoricalRecords()
 

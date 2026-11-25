@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../../../components/shared/PageHeader';
 import { DataTable } from '../../../components/shared/DataTable';
 import { activosApi } from '../api/activos.api';
@@ -19,6 +20,7 @@ function paramsFor(estado: EstadoFiltro, search: string): Record<string, unknown
 export function ActivosListPage() {
   const { user } = useAuth();
   const esAdmin = user?.rol === 'ADMINISTRADOR';
+  const navigate = useNavigate();
   const [estado, setEstado] = useState<EstadoFiltro>('activos');
   const [search, setSearch] = useState('');
   const qc = useQueryClient();
@@ -43,6 +45,19 @@ export function ActivosListPage() {
     { key: 'estado', header: 'Estado', render: (r: any) => r.estado },
     { key: 'responsable', header: 'Responsable', render: (r: any) => r.responsable_actual ?? '—' },
     { key: 'is_active', header: 'Activo', render: (r: any) => (r.is_active ? 'Sí' : 'No') },
+    {
+      key: 'ver',
+      header: 'Ver',
+      render: (r: any) => (
+        <button
+          type="button"
+          onClick={() => navigate(`/activos/${r.id}`)}
+          style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: 13, cursor: 'pointer', padding: 0 }}
+        >
+          Ver detalle
+        </button>
+      ),
+    },
     {
       key: 'acciones',
       header: 'Acciones',

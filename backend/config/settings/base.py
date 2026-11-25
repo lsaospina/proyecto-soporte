@@ -49,6 +49,9 @@ LOCAL_APPS = [
     "apps.mantenimientos.apps.MantenimientosConfig",
     "apps.dashboard.apps.DashboardConfig",
     "apps.licencias_garantias.apps.LicenciasGarantiasConfig",
+    "apps.incidentes.apps.IncidentesConfig",
+    "apps.documentos.apps.DocumentosConfig",
+    "apps.bajas.apps.BajasConfig",
     "simple_history",
 ]
 

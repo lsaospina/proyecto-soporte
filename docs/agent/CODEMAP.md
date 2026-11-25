@@ -76,6 +76,25 @@
 - `backend/apps/licencias_garantias/tests/integration/test_licencias_api.py` — permisos, CRUD, proveedor implícito, renovación, filtros, resumen y auditoría
 - `backend/apps/licencias_garantias/tests/integration/test_seed_licencias.py` — guarda DEBUG y seed idempotente
 
+### App incidentes
+- `backend/apps/incidentes/models.py` â€” `Incidente` (activo FK, reportado_por FK, fecha, descripciÃ³n, estado REPORTADO/EN_PROCESO/RESUELTO/CERRADO/CANCELADO) + `HistoricalIncidente`
+- `backend/apps/incidentes/{serializers,permissions,services,selectors,filters,views,urls}.py` â€” API `/api/v1/incidentes/` (list/create/cambiar_estado); ADMIN/TÃ‰CNICO todo, USUARIO_RESPONSABLE crea y ve solo los suyos; auditorÃ­a `INCIDENTE_*`
+- `backend/apps/incidentes/migrations/0001_initial.py` â€” esquema + histÃ³rico + Ã­ndices
+
+### App documentos (RF013)
+- `backend/apps/documentos/models.py` â€” `Documento` (activo FK, nombre, tipo, archivo FileField `documentos/%Y/%m/`, descripcion, subido_por FK) + `HistoricalDocumento`
+- `backend/apps/documentos/serializers.py` â€” lectura + creaciÃ³n con validaciÃ³n de extensiÃ³n y tamaÃ±o (<=10 MB)
+- `backend/apps/documentos/permissions.py` â€” `IsDocumentoAccess` (solo ADMINISTRADOR y TÃ‰CNICO)
+- `backend/apps/documentos/{selectors,filters,services,views,urls}.py` â€” listado/crear/eliminar + `descargar/` autenticado; auditorÃ­a `DOCUMENTO_*`; API `/api/v1/documentos/`
+- `backend/apps/documentos/migrations/0001_initial.py` â€” esquema + histÃ³rico + Ã­ndices
+
+### App bajas (RF014)
+- `backend/apps/bajas/models.py` â€” `Baja` (activo OneToOne, fecha, motivo, autorizado_por FK, documento FK opcional) + `HistoricalBaja`
+- `backend/apps/bajas/services.py` â€” `registrar_baja`: valida duplicado/asignación abierta/motivo/fecha, pasa el activo a DADO_DE_BAJA y audita `BAJA_REGISTRADA`
+- `backend/apps/bajas/{serializers,permissions,selectors,filters,views,urls}.py` â€” API `/api/v1/bajas/` (list/retrieve/create) solo ADMINISTRADOR
+- `backend/apps/bajas/migrations/0001_initial.py` â€” esquema + histórico + índice
+- `frontend/src/features/bajas/` â€” `api/bajas.api.ts` y `pages/BajasPage.tsx` (lista + alta con motivo/fecha/documento soporte); ruta `/bajas` y menú ADMINISTRADOR
+
 ### App dashboard
 - `backend/apps/dashboard/selectors.py` — `resumen_dashboard` (KPIs de inventario, cumplimiento preventivo mensual, próximos 14 días, vencidos, correctivos de 30 días, activos sin preventivo y costo anual)
 - `backend/apps/dashboard/serializers.py` — contrato de respuesta anidado del tablero (OpenAPI)

@@ -28,6 +28,9 @@ class ActivoSerializer(serializers.ModelSerializer):
             "almacenamiento_gb",
             "direccion_mac",
             "observaciones",
+            "plazo_garantia_meses",
+            "fecha_vencimiento_garantia",
+            "estado_garantia",
             "is_active",
             "responsable_actual",
             "created_at",
@@ -41,6 +44,8 @@ class ActivoSerializer(serializers.ModelSerializer):
             "categoria_nombre",
             "modelo_nombre",
             "responsable_actual",
+            "fecha_vencimiento_garantia",
+            "estado_garantia",
             "created_at",
             "updated_at",
         ]
@@ -65,6 +70,7 @@ class ActivoCreateUpdateSerializer(serializers.ModelSerializer):
             "almacenamiento_gb",
             "direccion_mac",
             "observaciones",
+            "plazo_garantia_meses",
         ]
 
 

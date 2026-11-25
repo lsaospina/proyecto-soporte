@@ -8,12 +8,11 @@ import {
   Users,
   Database,
   FileKey,
-  BarChart3,
-  Settings,
   LogOut,
   Menu,
   ChevronLeft,
   UserCheck,
+  Archive,
 } from 'lucide-react';
 
 import type { UserRole } from '../../features/auth/types';
@@ -33,8 +32,7 @@ const navItems: NavItem[] = [
   { label: 'Mantenimientos', to: '/mantenimientos', icon: <Wrench size={20} />, roles: ['ADMINISTRADOR', 'TECNICO'] },
   { label: 'Usuarios', to: '/usuarios', icon: <Users size={20} />, roles: ['ADMINISTRADOR'] },
   { label: 'Licencias', to: '/licencias', icon: <FileKey size={20} />, roles: ['ADMINISTRADOR'] },
-  { label: 'Reportes', to: '/reportes', icon: <BarChart3 size={20} />, roles: ['ADMINISTRADOR'] },
-  { label: 'Configuración', to: '/configuracion', icon: <Settings size={20} />, roles: ['ADMINISTRADOR'] },
+  { label: 'Bajas', to: '/bajas', icon: <Archive size={20} />, roles: ['ADMINISTRADOR'] },
 ];
 
 const roleLabels: Record<UserRole, string> = {

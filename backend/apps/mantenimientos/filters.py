@@ -11,10 +11,11 @@ class MantenimientoFilter(django_filters.FilterSet):
     )
     tecnico = django_filters.NumberFilter(field_name="tecnico_id")
     tipo = django_filters.ChoiceFilter(choices=TipoMantenimiento.choices)
+    activo = django_filters.NumberFilter(field_name="activo_id")
 
     class Meta:
         model = Mantenimiento
-        fields = ["anio", "mes", "situacion", "tecnico", "tipo"]
+        fields = ["anio", "mes", "situacion", "tecnico", "tipo", "activo"]
 
     def filtrar_situacion(self, queryset, name, value):
         return queryset.filter(situacion_calc=value)

@@ -50,8 +50,8 @@ Elección del usuario: `[ ] A   [ ] B   [ ] A con ajustes: ________`
 | Software | nombre, fabricante | nombre único. Nueva | PENDIENTE — no se implementa: `Licencia.servicio` guarda el nombre (ADR-019) |
 | Licencia | proveedor FK, servicio, periodicidad (MENSUAL/TRIMESTRAL/SEMESTRAL/ANUAL/BIENAL), fecha_renovacion, cantidad, valor (opc.), renovacion_automatica, medio_pago, cuenta_vinculada, responsable_uso, observacion, is_active | CHECK cantidad ≥ 1 y valor ≥ 0 o nulo; estado de renovación (VIGENTE/POR_VENCER/VENCIDA/INACTIVA) **derivado** por selector, no almacenado | APROBADO (T-007 licencias) |
 | LicenciaActivo | licencia FK, activo FK, fecha_asignacion | único (licencia, activo); N:M | PENDIENTE (segunda fase T-007) |
-| Documento | activo FK, tipo, nombre, archivo (FileField), subido_por FK | validar tipo y tamaño | PENDIENTE |
-| Baja | activo (OneToOne), fecha, motivo, autorizado_por FK, documento FK (opc.) | RF014 | PENDIENTE |
+| Documento | activo FK, tipo (TextChoices), nombre, archivo (FileField), descripcion (opc.), subido_por FK | validar extensión y tamaño (≤10 MB); simple-history | APROBADO (RF013) |
+| Baja | activo (OneToOne), fecha, motivo, autorizado_por FK, documento FK (opc.) | RF014; al registrar pasa el activo a DADO_DE_BAJA; bloquea si hay asignación vigente | APROBADO (RF014) |
 | Alerta | tipo, activo FK, destinatario FK (opc.), fecha_evento, mensaje, leida | único (tipo, activo, fecha_evento) para no duplicar | PENDIENTE |
 | Reporte | tipo, fecha_generacion, usuario FK, parametros (JSON) | bitácora de reportes generados | PENDIENTE |
 | RegistroAuditoria | usuario FK, accion, entidad, entidad_id, fecha, ip | accesos y exportaciones. Cambios de datos: tablas `Historical*` de simple-history | APROBADO (T-002) |
@@ -103,3 +103,15 @@ Elección del usuario: `[ ] A   [ ] B   [ ] A con ajustes: ________`
 | Modelo | App | Campos/Definición | Notas |
 |---|---|---|---|
 | `AsignacionActivo` | activos | `activo` FK PROTECT, `usuario` FK PROTECT, `asignado_por` FK PROTECT, `fecha_inicio` DateField, `fecha_fin` DateField nulo, `observacion` texto | `HistoricalAsignacionActivo`; constraint único parcial de asignación abierta por activo y CHECK de fechas; `activa`/`dias_asignado` derivados. La asignación pone el activo en ASIGNADO y la devolución en DISPONIBLE. Migración `activos/0002`. Endpoints `/api/v1/asignaciones/` (`resumen/`, `usuarios/`, `cerrar/`, `reasignar/`): lectura ADMIN/TÉCNICO, escritura solo ADMINISTRADOR (RF005/RF012). Seed `seed_asignaciones_dev`. `Activo.responsable_actual` derivado por subconsulta. |
+
+### Aprobado e implementado RF013 — gestión documental (APROBADO 2026-11-25)
+
+| Modelo | App | Campos/Definición | Notas |
+|---|---|---|---|
+| `Documento` | documentos | `activo` FK PROTECT, `nombre` CharField(150), `tipo` (FACTURA/MANUAL/GARANTIA/CONTRATO/EVIDENCIA_MANTENIMIENTO/OTRO), `archivo` FileField(`documentos/%Y/%m/`), `descripcion` texto, `subido_por` FK PROTECT | `HistoricalDocumento` (simple-history); validación de extensión y tamaño (≤10 MB); descarga autenticada vía `/descargar/` (no se expone MEDIA públicamente); auditoría `DOCUMENTO_SUBIDO`/`DOCUMENTO_DESCARGADO`/`DOCUMENTO_ELIMINADO`. Endpoints `/api/v1/documentos/` (list/create/delete, filtros `activo`/`tipo`, búsqueda). Solo ADMINISTRADOR y TÉCNICO. Migración `documentos/0001`. |
+
+### Aprobado e implementado RF014 — gestión de bajas (APROBADO 2026-11-25)
+
+| Modelo | App | Campos/Definición | Notas |
+|---|---|---|---|
+| `Baja` | bajas | `activo` OneToOne PROTECT (`related_name="baja"`), `fecha` DateField (no futura), `motivo` texto, `autorizado_por` FK Usuario PROTECT, `documento` FK Documento PROTECT nulo | `HistoricalBaja`. Al registrar: el activo pasa a `DADO_DE_BAJA` (con historial) y se audita `BAJA_REGISTRADA`; se bloquea si ya existe baja o si hay asignación abierta. Endpoints `/api/v1/bajas/` (list/retrieve/create). Solo ADMINISTRADOR (RF014). Migración `bajas/0001`. |

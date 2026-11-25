@@ -22,4 +22,7 @@ urlpatterns = [
     path("api/v1/", include("apps.mantenimientos.urls")),
     path("api/v1/", include("apps.dashboard.urls")),
     path("api/v1/", include("apps.licencias_garantias.urls")),
+    path("api/v1/", include("apps.incidentes.urls")),
+    path("api/v1/", include("apps.documentos.urls")),
+    path("api/v1/", include("apps.bajas.urls")),
 ]
